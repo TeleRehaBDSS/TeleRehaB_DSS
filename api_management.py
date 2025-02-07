@@ -3,6 +3,9 @@ from shared_variables import urlLogin, urlProduceApiKey, urlUploadSensorData, he
 import configparser
 from datetime import datetime
 
+####fwhuoegbuwg
+#fbuwwgu
+
 def login():
     global jwt_token, headers, credentials
 
