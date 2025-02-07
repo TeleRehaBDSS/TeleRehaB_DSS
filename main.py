@@ -265,10 +265,10 @@ def runScenario(queueData):
                 imu_serials[name] = serial_number
 
             # Assign each to a variable if needed
-            imu_head = imu_serials.get('imu-one')
-            imu_pelvis = imu_serials.get('imu-two')
-            imu_left = imu_serials.get('imu-three')
-            imu_right = imu_serials.get('imu-four')
+            imu_head = imu_serials.get('IMU 1')
+            imu_pelvis = imu_serials.get('IMU 2')
+            imu_left = imu_serials.get('IMU 3')
+            imu_right = imu_serials.get('IMU 4')
 
             # Fetch the daily schedule
             exercises = get_daily_schedule()
