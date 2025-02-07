@@ -343,7 +343,6 @@ def runScenario(queueData):
                 time.sleep(2)
                 client.publish('StartRecording', 'start')
 
-                client.publish('EXIT', 'EXIT')
 
                 # Start the scheduler process
                 scheduler_process = mp.Process(target=scheduler, args=(scheduleQueue,))
