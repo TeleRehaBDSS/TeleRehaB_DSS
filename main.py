@@ -265,10 +265,10 @@ def runScenario(queueData):
                 imu_serials[name] = serial_number
 
             # Assign each to a variable if needed
-            imu_head = imu_serials.get('IMU 1')
-            imu_pelvis = imu_serials.get('IMU 2')
-            imu_left = imu_serials.get('IMU 3')
-            imu_right = imu_serials.get('IMU 4')
+            imu_head = imu_serials.get('imu-one')
+            imu_pelvis = imu_serials.get('imu-two')
+            imu_left = imu_serials.get('imu-three')
+            imu_right = imu_serials.get('imu-four')
 
             # Fetch the daily schedule
             exercises = get_daily_schedule()
@@ -353,7 +353,7 @@ def runScenario(queueData):
                 polar_proc.start()
 
                 # Wait for Polar connection or failure
-                time.sleep(5)  # Give some time to attempt connection
+                time.sleep(3)  # Give some time to attempt connection
 
                 # Start the process to receive IMU data
                 imu_process = mp.Process(
@@ -362,8 +362,6 @@ def runScenario(queueData):
                 )
 
                 imu_process.start()
-
-
 
                 # Wait for the IMU process to finish
                 imu_process.join()
@@ -399,7 +397,8 @@ def runScenario(queueData):
                     print(f"Metrics for Exercise {exercise['exerciseId']}: {metrics}")
 
                     #Post the results
-                    metrics["polar_data"] = polar_data
+                    if polar_data != []:
+                        metrics["polar_data"] = polar_data
                     post_results(json.dumps(metrics), exercise['exerciseId'])
                    
                 else:
@@ -480,7 +479,7 @@ def runScenario(queueData):
                         except Exception as e:
                             logger.error(f"Failed to send voice instruction or get response for Exercise ID {exercise['exerciseId']}: {e}")
                             return
-                    ###Here a message for it is better to interrupt for now!!!
+                    response = send_voice_instructions("bph0223") #It is better to interupt for now
                     break;
             
             # Fetch updated schedule after processing current exercises
@@ -493,28 +492,6 @@ def runScenario(queueData):
 
     except requests.exceptions.RequestException as e:
         logger.error(f"Error: {e}")
-
-
-# def checkIAMALIVE(iamalive_queue):
-#     client2 = mqtt.Client()
-
-#     client2.on_connect = on_connect2
-#     client2.on_message = on_message2(iamalive_queue)
-#     client2.connect(MQTT_BROKER_HOST, MQTT_BROKER_PORT, MQTT_KEEP_ALIVE_INTERVAL)
-#     client2.loop_start()
-
-
-# def on_connect2(client, userdata, flags, rc):
-#     print(f"Connected with result code {rc}")
-#     client.subscribe([("iamalive_topic", 0)])
-
-
-# def on_message2(client, userdata, msg, iamalive_queue):
-#     payload = json.loads(msg.payload.decode())
-#     print(f"Received message on {msg.topic}: {payload}")
-
-#     if msg.topic == "iamalive_topic":
-#         iamalive_queue.put('OK')
 
 
 # MQTT setup
@@ -552,9 +529,6 @@ if enableConnectionToAPI:
 
 server_process = mp.Process(target=start_multicast_server, args=(queueData,))
 server_process.start()
-
-# iamalive_process = mp.Process(target=checkIAMALIVE, args=(iamalive_queue,))
-# iamalive_process.start()
 
 thread = threading.Thread(target=publish_loop)
 # thread.start()

@@ -30,7 +30,7 @@ async def ble_process(adapter_index, output_queue):
     logging.info(f"Scanning for BLE devices using adapter hci{adapter_index}...")
 
     retry_count = 0
-    max_retries = 3  # Retry limit if device is not found
+    max_retries = 2  # Retry limit if device is not found
 
     while retry_count < max_retries:
         devices = await BleakScanner.discover(adapter=adapter_index)
@@ -42,7 +42,7 @@ async def ble_process(adapter_index, output_queue):
         else:
             retry_count += 1
             logging.warning(f"Polar H10 not found. Retry {retry_count}/{max_retries}")
-            await asyncio.sleep(5)  # Wait before retrying
+            await asyncio.sleep(2)  # Wait before retrying
 
     if not polar_h10:
         logging.error("Polar H10 device not found after multiple attempts.")
