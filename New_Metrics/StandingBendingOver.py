@@ -60,7 +60,7 @@ def process_imu_data(imu_data_lists, fs, plotdiagrams=True):
     for imu_data in imu_data_lists:
         if imu_data:
             #print('imu_data = ', imu_data)
-            columns = ['Timestamp', 'elapsed(time)', 'W(number)', 'X(number)', 'Y(number)', 'Z(number)']
+            columns = ['Timestamp', 'elapsed(time)', 'W(number)', 'X(number)', 'Y(number)', 'Z (number)']
             df = pd.DataFrame(imu_data, columns=columns)
             df['Timestamp'] = pd.to_datetime(df['Timestamp'], unit='ms')
             df = df.sort_values(by='Timestamp')
