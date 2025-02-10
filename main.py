@@ -334,8 +334,6 @@ def runScenario(queueData):
                     logger.warning(f"No config message found for Exercise ID: {exercise['exerciseId']}")
                     continue
                 
-
-                
                 # Publish configuration and start the exercise
                 topic = "IMUsettings"
 
