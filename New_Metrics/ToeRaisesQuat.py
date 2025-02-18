@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 from scipy.signal import find_peaks
 from scipy.signal import argrelextrema
 from scipy.spatial.transform import Rotation as R
-from scipy.signal import butter, filtfilt
+from scipy.signal import butter, filtfilt, correlate
 import json
 import pywt
 
@@ -130,6 +130,26 @@ def reformat_sensor_data(sensor_data_list):
 
     return reformatted_data
 
+def estimate_period(signal, sampling_rate):
+    """
+    Estimate the dominant period of a signal (in samples) using its autocorrelation.
+    Returns the lag (in samples) of the first peak after lag 0.
+    """
+    # Remove the mean to avoid a huge peak at lag 0
+    signal = signal - np.mean(signal)
+    # Compute full autocorrelation
+    autocorr = np.correlate(signal, signal, mode='full')
+    # Use only the second half (non-negative lags)
+    autocorr = autocorr[autocorr.size // 2:]
+    # Zero out the lag-0 value so that we can find the next peak
+    autocorr[0] = 0
+    # Find peaks in the autocorrelation function
+    peaks, _ = find_peaks(autocorr)
+    if len(peaks) == 0:
+        return None
+    # The first detected peak corresponds to the dominant period (in samples)
+    period = peaks[1]
+    return period*0.5
 
 def plotIMUDATA(Limu, x, filename):
 
@@ -219,8 +239,7 @@ def get_metrics(imu1,imu2,imu3,imu4, counter):
         return returnedJson
 
 def getMetricsSittingNew02(Limu3, Limu4, plotdiagrams):
-    
-    #Limu1
+    # Create DataFrames from the provided data
     columns = ['Timestamp', 'elapsed(time)', 'W(number)', 'X(number)', 'Y (number)', 'Z (number)']
     df_Limu3 = pd.DataFrame(Limu3, columns=columns)
     df_Limu3 = df_Limu3.reset_index(drop=True)
@@ -228,28 +247,34 @@ def getMetricsSittingNew02(Limu3, Limu4, plotdiagrams):
     df_Limu3 = df_Limu3.sort_values(by=['elapsed(time)'])
     df_Limu3.set_index('elapsed(time)', inplace=True)
         
-    #Limu2
     df_Limu4 = pd.DataFrame(Limu4, columns=columns)
-    df_Limu4['elapsed(time)'] = pd.to_datetime(df_Limu4['elapsed(time)'], unit='ms')
     df_Limu4 = df_Limu4.reset_index(drop=True)
+    df_Limu4['elapsed(time)'] = pd.to_datetime(df_Limu4['elapsed(time)'], unit='ms')
     df_Limu4 = df_Limu4.sort_values(by=['elapsed(time)'])
     df_Limu4.set_index('elapsed(time)', inplace=True)
         
-    # Preprocess z-axis data
+    # Preprocess the    X-axis data
     df_Limu3['z_smoothed'] = preprocess_signal_enhanced(df_Limu3['Z (number)'])
     df_Limu4['z_smoothed'] = preprocess_signal_enhanced(df_Limu4['Z (number)'])
     
-     # Detection parameters
-    sampling_rate = 100  # Hz
-    left_foot_threshold = -0.02
-    right_foot_threshold = 0.01
-    distance_constraint = 100  
+    # Detection parameters
+    sampling_rate = 50  # Hz
+    default_distance = 100  # Fallback value if autocorrelation fails
 
-    # Detect movements
-    left_valleys, _ = find_peaks(-df_Limu3['z_smoothed'], height=-left_foot_threshold, distance=distance_constraint)
-    right_peaks, _ = find_peaks(df_Limu4['z_smoothed'], height=right_foot_threshold, distance=distance_constraint)
+    # Use autocorrelation to estimate the period (in samples) of the toe raises
+    left_period = estimate_period(df_Limu3['z_smoothed'].values, sampling_rate)
+    right_period = estimate_period(df_Limu4['z_smoothed'].values, sampling_rate)
+    distance_left = int(left_period) if left_period is not None else default_distance
+    distance_right = int(right_period) if right_period is not None else default_distance
 
-    # Calculate metrics
+    print(f"Estimated left period (samples): {distance_left}")
+    print(f"Estimated right period (samples): {distance_right}")
+
+    # Detect movements using the autocorrelation-based distance constraints
+    left_valleys, _ = find_peaks(df_Limu3['z_smoothed'],prominence=0.05, distance=distance_left)
+    right_peaks, _ = find_peaks(df_Limu4['z_smoothed'],prominence=0.05, distance=distance_right)
+
+    # Calculate metrics for each leg
     left_metrics = calculate_metrics(left_valleys, df_Limu3['z_smoothed'], sampling_rate)
     right_metrics = calculate_metrics(right_peaks, df_Limu4['z_smoothed'], sampling_rate)
 
@@ -265,7 +290,6 @@ def getMetricsSittingNew02(Limu3, Limu4, plotdiagrams):
 
     # Optionally plot diagrams
     if plotdiagrams:
-        import matplotlib.pyplot as plt
         plt.figure(figsize=(12, 6))
         plt.plot(df_Limu3['z_smoothed'].values, label='Left Foot Z-Axis (Smoothed)')
         plt.plot(left_valleys, df_Limu3['z_smoothed'].values[left_valleys], "rx", label="Detected Movements - Left Foot")

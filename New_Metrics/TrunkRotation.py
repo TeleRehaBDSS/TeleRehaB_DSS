@@ -10,7 +10,7 @@ from scipy.signal import argrelextrema
 from scipy.spatial.transform import Rotation as R
 from scipy.signal import butter, filtfilt
 import json
-from scipy.signal import savgol_filter
+from scipy.signal import savgol_filter,correlate
 
 def reformat_sensor_data(sensor_data_list):
     if not sensor_data_list:
@@ -140,81 +140,41 @@ def getMetricsSittingNew01(Limu2, plotdiagrams):
     # Step 1: Preprocess the z-axis data by smoothing
     df_Limu2['z_smooth'] = savgol_filter(df_Limu2['Z (number)'], window_length=51, polyorder=3)
 
-    # Step 2: Set thresholds for rotation detection
-    middle_threshold = 0.05  # Middle range around zero
-    min_threshold = -0.05     # Threshold for right rotation (minimum)
-    max_threshold = 0.05      # Threshold for left rotation (maximum)
-
-    # Step 3: Initialize variables for detecting rotations
-    rotation_counts = {"right": 0, "left": 0}
-    current_rotation = None
-    rotation_timestamps = {"right": [], "left": []}  # Store timestamps for detected rotations
-
-    # Step 4: Detect right and left rotations
-    for i in range(1, len(df_Limu2)):
-        z_prev = df_Limu2['z_smooth'].iloc[i - 1]
-        z_curr = df_Limu2['z_smooth'].iloc[i]
-        timestamp = df_Limu2.index[i]
-        
-        # Detect right rotation: from middle to min and back to middle
-        if z_prev >= -middle_threshold and z_curr < min_threshold:
-            current_rotation = "right"
-        elif current_rotation == "right" and z_curr >= -middle_threshold:
-            rotation_counts["right"] += 1
-            rotation_timestamps["right"].append(timestamp)
-            current_rotation = None
-
-        # Detect left rotation: from middle to max and back to middle
-        elif z_prev <= middle_threshold and z_curr > max_threshold:
-            current_rotation = "left"
-        elif current_rotation == "left" and z_curr <= middle_threshold:
-            rotation_counts["left"] += 1
-            rotation_timestamps["left"].append(timestamp)
-            current_rotation = None
-
-    # Step 5: Calculate metrics based on detected rotations
-    number_of_movements = len(rotation_timestamps["right"]) + len(rotation_timestamps["left"])
-
-    # Calculate duration between each detected rotation for right and left
-    durations = []
-    for side in ["right", "left"]:
-        timestamps = rotation_timestamps[side]
-        durations += [timestamps[i] - timestamps[i - 1] for i in range(1, len(timestamps))]
-    durations = np.array([d.total_seconds() for d in durations])  # Convert durations to seconds
+    # Compute autocorrelation for movement detection
+    z_signal = df_Limu2['z_smooth'].values
+    z_signal = (z_signal - np.mean(z_signal)) / np.std(z_signal)  # Normalize
+    autocorr = correlate(z_signal, z_signal, mode='full')
+    autocorr = autocorr[len(autocorr)//2:]  # Keep positive lags only
     
-    # Pace of movements (movements per second)
-    if len(df_Limu2) > 1:
-        total_time = (df_Limu2.index[-1] - df_Limu2.index[0]).total_seconds()
-        pace_movements_per_second = number_of_movements / total_time if total_time > 0 else 0
+    # Detect peaks in autocorrelation to find periodic movements
+    peaks, _ = find_peaks(autocorr, distance=50)
+    number_of_movements = len(peaks)
+    
+    # Calculate movement duration statistics
+    if len(peaks) > 1:
+        durations = np.diff(df_Limu2.index[peaks]).total_seconds().astype(float) *1000000
+        mean_duration_seconds = np.mean(durations) if len(durations) > 0 else 0
+        std_duration_seconds = np.std(durations) if len(durations) > 0 else 0
     else:
-        pace_movements_per_second = 0
-
-    # Calculate range degrees (approximate rotation angle) based on max and min z values for each rotation
-    ranges_degrees = []
-    for side in ["right", "left"]:
-        for ts in rotation_timestamps[side]:
-            idx = df_Limu2.index.get_loc(ts)
-            z_values_window = df_Limu2['z_smooth'].iloc[max(0, idx - 5): min(len(df_Limu2), idx + 5)]
-            range_degrees = np.degrees(np.max(z_values_window) - np.min(z_values_window))
-            ranges_degrees.append(range_degrees)
+        mean_duration_seconds = 0
+        std_duration_seconds = 0
     
-    mean_combined_range_degrees = np.mean(ranges_degrees) if ranges_degrees else 0
-    std_combined_range_degrees = np.std(ranges_degrees) if ranges_degrees else 0
-    mean_duration_seconds = np.mean(durations) if len(durations) > 0 else 0
-    std_duration_seconds = np.std(durations) if len(durations) > 0 else 0
+    # Calculate movement pace
+    total_time = (df_Limu2.index[-1] - df_Limu2.index[0]).total_seconds() *1000000
+    pace_movements_per_second = number_of_movements / total_time if total_time > 0 else 0
     
-    # Compile metrics data
+    # Compile metrics
     metrics_data = {
         "total_metrics": {
             "number_of_movements": number_of_movements,
             "pace_movements_per_second": pace_movements_per_second,
-            "mean_combined_range_degrees": mean_combined_range_degrees,
-            "std_combined_range_degrees": std_combined_range_degrees,
             "mean_duration_seconds": mean_duration_seconds,
-            "std_duration_seconds": std_duration_seconds
+            "std_duration_seconds": std_duration_seconds,
+            "total time": total_time
         }
     }
-
+    
+    print(metrics_data)
     print (metrics_data)
     datetime_string = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     filename = f"{datetime_string}_AnteroposteriorDirection_metrics.txt"
@@ -225,16 +185,7 @@ def getMetricsSittingNew01(Limu2, plotdiagrams):
     # Plot the smoothed data and mark detected rotations if plotdiagrams is True
     if plotdiagrams:
         plt.figure(figsize=(12, 6))
-        plt.plot(df_Limu2.index, df_Limu2['z_smooth'], label='Smoothed z-axis data', color='blue')
-        
-        # Mark right rotations
-        for ts in rotation_timestamps["right"]:
-            plt.axvline(x=ts, color='red', linestyle='--', label='Right Rotation' if ts == rotation_timestamps["right"][0] else "")
-        
-        # Mark left rotations
-        for ts in rotation_timestamps["left"]:
-            plt.axvline(x=ts, color='green', linestyle='--', label='Left Rotation' if ts == rotation_timestamps["left"][0] else "")
-        
+        plt.plot(df_Limu2.index, df_Limu2['z_smooth'], label='Smoothed z-axis data', color='blue')       
         plt.xlabel('Timestamp')
         plt.ylabel('Smoothed z-axis')
         plt.title('Detected Trunk Rotations (Right and Left) on z-axis')

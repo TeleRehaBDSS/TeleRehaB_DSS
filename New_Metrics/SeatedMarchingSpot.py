@@ -27,7 +27,7 @@ def estimate_peak_distance(signal, sampling_rate):
     else:
         return int(sampling_rate / 2)  # Default to half the sampling rate
 
-def estimate_prominence(signal, factor=0.5):
+def estimate_prominence(signal, factor=0.3):
     """
     Estimate the prominence based on the standard deviation of the signal.
     """
@@ -265,8 +265,15 @@ def getMetricsSittingNew04(Limu0, Limu1, Limu2, plotdiagrams):
     timestamps_left = (df_Limu1.index - df_Limu1.index[0]).total_seconds().values
     timestamps_right = (df_Limu2.index - df_Limu2.index[0]).total_seconds().values
 
-    # Dynamic parameter estimation
+    # Lists to store cumulative values
+    left_movement_counts = []
+    right_movement_counts = []
+    left_durations_list = []
+    right_durations_list = []
+    left_ranges_list = []
+    right_ranges_list = []
 
+    # Dynamic parameter estimation
     left_distance = estimate_peak_distance(left_foot_z, sampling_rate)
     right_distance = estimate_peak_distance(right_foot_z, sampling_rate)
 
@@ -277,77 +284,55 @@ def getMetricsSittingNew04(Limu0, Limu1, Limu2, plotdiagrams):
     left_peaks, _ = find_peaks(-left_foot_z, prominence=left_prominence, distance=left_distance)
     right_peaks, _ = find_peaks(right_foot_z, prominence=right_prominence, distance=right_distance)
 
-    # Filtered peaks
-    left_peaks_filtered = filter_peaks(left_peaks,previous_left_peaks, min_distance=200)
-    right_peaks_filtered = filter_peaks(right_peaks,previous_right_peaks, min_distance=200)
+    # Append detected movements to lists
+    left_movement_counts.append(len(left_peaks))
+    right_movement_counts.append(len(right_peaks))
 
-    previous_left_peaks = left_peaks_filtered
-    previous_right_peaks = right_peaks_filtered
+    # Compute durations and append them
+    if len(left_peaks) > 1:
+        left_durations_list.extend(np.diff(timestamps_left[left_peaks]))
+    if len(right_peaks) > 1:
+        right_durations_list.extend(np.diff(timestamps_right[right_peaks]))
 
-    # Calculate metrics for each foot based on the filtered peaks
-    # LEFT FOOT
-    left_movements_count = len(left_peaks_filtered)
-    left_durations = np.diff(timestamps_left[left_peaks_filtered])  # No multiplication needed as timestamps are in seconds
-    left_mean_duration = np.mean(left_durations) if left_durations.size > 0 else 0
-    left_std_duration = np.std(left_durations) if left_durations.size > 0 else 0
-    left_combined_range_degrees = np.ptp(left_foot_z[left_peaks_filtered]) if left_peaks_filtered.size > 0 else 0
-    left_mean_combined_range = np.mean(left_foot_z[left_peaks_filtered]) if left_peaks_filtered.size > 0 else 0
-    left_std_combined_range = np.std(left_foot_z[left_peaks_filtered]) if left_peaks_filtered.size > 0 else 0
+    # Compute ranges and append them
+    if len(left_peaks) > 0:
+        left_ranges_list.append(np.ptp(left_foot_z[left_peaks]))
+    if len(right_peaks) > 0:
+        right_ranges_list.append(np.ptp(right_foot_z[right_peaks]))
 
-    # RIGHT FOOT
-    right_movements_count = len(right_peaks_filtered)
-    right_durations = np.diff(timestamps_right[right_peaks_filtered])  # No multiplication needed as timestamps are in seconds
-    right_mean_duration = np.mean(right_durations) if right_durations.size > 0 else 0
-    right_std_duration = np.std(right_durations) if right_durations.size > 0 else 0
-    right_combined_range_degrees = np.ptp(right_foot_z[right_peaks_filtered]) if right_peaks_filtered.size > 0 else 0
-    right_mean_combined_range = np.mean(right_foot_z[right_peaks_filtered]) if right_peaks_filtered.size > 0 else 0
-    right_std_combined_range = np.std(right_foot_z[right_peaks_filtered]) if right_peaks_filtered.size > 0 else 0
+    # Compute cumulative values
+    total_left_movements = sum(left_movement_counts)
+    total_right_movements = sum(right_movement_counts)
+    total_left_duration = sum(left_durations_list) if len(left_durations_list) > 0 else 0
+    total_right_duration = sum(right_durations_list) if len(right_durations_list) > 0 else 0
+    total_left_range = sum(left_ranges_list) / len(left_ranges_list) if len(left_ranges_list) > 0 else 0
+    total_right_range = sum(right_ranges_list) / len(right_ranges_list) if len(right_ranges_list) > 0 else 0
 
-    # Compile metrics data
+    # Compile final metrics
     metrics_data = {
         "total_metrics": {
             "LEFT LEG": {
-                "number_of_movements": left_movements_count,
-                "pace_movements_per_second": left_movements_count / (len(left_foot_z) * time_interval),
-                "mean_combined_range_degrees": left_mean_combined_range,
-                "std_combined_range_degrees": left_std_combined_range,
-                "mean_duration_seconds": left_mean_duration,
-                "std_duration_seconds": left_std_duration,
+                "number_of_movements": total_left_movements,
+                "pace_movements_per_second": total_left_movements / (len(left_foot_z) * time_interval),
+                "mean_combined_range_degrees": total_left_range,
+                "mean_duration_seconds": total_left_duration / total_left_movements if total_left_movements > 0 else 0,
                 "Exercise_duration": len(left_foot_z) * time_interval,
-                "movement_duration": np.sum(left_durations),
+                "movement_duration": total_left_duration,
             },
             "RIGHT LEG": {
-                "number_of_movements": right_movements_count,
-                "pace_movements_per_second": right_movements_count / (len(right_foot_z) * time_interval),
-                "mean_combined_range_degrees": right_mean_combined_range,
-                "std_combined_range_degrees": right_std_combined_range,
-                "mean_duration_seconds": right_mean_duration,
-                "std_duration_seconds": right_std_duration,
+                "number_of_movements": total_right_movements,
+                "pace_movements_per_second": total_right_movements / (len(right_foot_z) * time_interval),
+                "mean_combined_range_degrees": total_right_range,
+                "mean_duration_seconds": total_right_duration / total_right_movements if total_right_movements > 0 else 0,
                 "Exercise_duration": len(right_foot_z) * time_interval,
-                "movement_duration": np.sum(right_durations),
+                "movement_duration": total_right_duration,
             }
         }
     }
 
-    print(metrics_data);
+    print(metrics_data)
 
-    # Collect movement details for the "movements" list without timestamps
-    movements = []
-    for idx in left_peaks_filtered:
-        movements.append({
-            "foot": "LEFT",
-            "degree": left_foot_z[idx]
-        })
 
-    for idx in right_peaks_filtered:
-        movements.append({
-            "foot": "RIGHT",
-            "degree": right_foot_z[idx]
-        })
-
-    # Print or log the movements if plotdiagrams is enabled
-    if plotdiagrams:
-        print("Movements List:", movements)
     datetime_string = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     filename = f"{datetime_string}_SeatedMarchingSpot_metrics.txt"
 

@@ -14,6 +14,7 @@ MQTT_KEEP_ALIVE_INTERVAL = 60
 # Topics
 DEMO_TOPIC = "exercise/demo"
 MSG_TOPIC = "exercise/msg"
+EXIT_TOPIC = "exercise/exit"
 IAMALIVETOPIC = "iamalive_topic"
 
 # Global Flags
@@ -36,17 +37,30 @@ def reset_global_flags():
 # MQTT Callbacks
 def on_connect(client, userdata, flags, rc):
     print(f"Connected with result code {rc}")
-    client.subscribe([(DEMO_TOPIC, 0), (MSG_TOPIC, 0)])
+    client.subscribe([(DEMO_TOPIC, 0), (MSG_TOPIC, 0), (EXIT_TOPIC,0)])
 
 
 def on_message(client, userdata, msg):
     global ack_received, demo_start_received, demo_end_received, finish_received,finish_response
     reset_global_flags()
 
-    payload = json.loads(msg.payload.decode())
+    try:
+        payload = json.loads(msg.payload.decode())  # Try to parse JSON
+        print(f"Received JSON message on {msg.topic}: {payload}")
+    except json.JSONDecodeError:
+        payload = msg.payload.decode()  # If not JSON, use raw string
+        print(f"Received non-JSON message on {msg.topic}: {payload}")
+
     print(f"Received message on {msg.topic}: {payload}")
 
-    if msg.topic == DEMO_TOPIC:
+
+    if msg.topic == EXIT_TOPIC:
+        if isinstance(payload, dict) and payload.get("action") == "ACK":
+            print("EXIT acknowledged. Stopping execution.")
+            client.disconnect()
+            exit(0)
+            
+    elif msg.topic == DEMO_TOPIC:
         if payload.get("action") == "ACK":
             ack_received = True
         elif payload.get("action") == "DEMO_START":
@@ -118,12 +132,25 @@ def set_language(language):
 #{'exerciseName': 'ex1', 'progression': 0, 'exerciseId': 1, 'weekNumber': 47, 'year': 2024}
 # Function for Exercise Demonstration
 
+def send_exit():
+    exit_message = {
+        "action": "EXIT",
+        "exercise": "/",
+        "timestamp": datetime.now().isoformat(),
+        "code": "",
+        "message": "",
+        "language": "/"
+    }
+    client.publish(EXIT_TOPIC, json.dumps(exit_message))
+    print(f"Published EXIT message: {exit_message}")
+
 def start_exercise_demo(exercise):
     reset_global_flags()
+
     if exercise['exerciseId'] == 1:
         exercise_name = f"VC holobalance_sitting_1 P{exercise['progression']}"
     elif exercise['exerciseId'] == 2:
-        exercise_name = f"VC holobalance_standing_2 P{exercise['progression']}"
+        exercise_name = f"VC holobalance_sitting_2 P{exercise['progression']}"
     elif exercise['exerciseId'] == 3:
         exercise_name = f"VC holobalance_sitting_3 P{exercise['progression']}"
     elif exercise['exerciseId'] == 4:
@@ -140,6 +167,12 @@ def start_exercise_demo(exercise):
         exercise_name = f"VC holobalance_walking_2 P{exercise['progression']}"
     elif exercise['exerciseId'] == 10:
         exercise_name = f"VC holobalance_walking_3 P{exercise['progression']}"
+    elif exercise['exerciseId'] == 11:
+        exercise_name = f"VC holobalance_stretching_1 P{exercise['progression']-1}"
+    elif exercise['exerciseId'] == 12:
+        exercise_name = f"VC holobalance_stretching_2 P{exercise['progression']-1}"
+    elif exercise['exerciseId'] == 13:
+        exercise_name = f"VC holobalance_stretching_3 P{exercise['progression']-1}"
     elif exercise['exerciseId'] == 14:
         exercise_name = f"VC holobalance_sitting_4 P{exercise['progression']}"
     elif exercise['exerciseId'] == 15:
@@ -153,9 +186,9 @@ def start_exercise_demo(exercise):
     elif exercise['exerciseId'] == 19:
         exercise_name = f"VC holobalance_standing_5 P{exercise['progression']}"
     elif exercise['exerciseId'] == 20:
-        exercise_name = f"VC holobalance_standing_6 P{exercise['progression']}"
-    elif exercise['exerciseId'] == 21:
         exercise_name = f"VC holobalance_standing_7 P{exercise['progression']}"
+    elif exercise['exerciseId'] == 21:
+        exercise_name = f"VC holobalance_standing_6 P{exercise['progression']}"
     elif exercise['exerciseId'] == 22:
         exercise_name = f"VC holobalance_walking_4 P{exercise['progression']}"
     elif exercise['exerciseId'] == 23:

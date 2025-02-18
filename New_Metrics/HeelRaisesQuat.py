@@ -10,7 +10,7 @@ from scipy.signal import argrelextrema
 from scipy.spatial.transform import Rotation as R
 from scipy.signal import butter, filtfilt
 import json
-from scipy.signal import butter, filtfilt, medfilt, find_peaks
+from scipy.signal import butter, filtfilt, medfilt, find_peaks, correlate
 from scipy.ndimage import gaussian_filter1d
 
 
@@ -34,7 +34,7 @@ def estimate_peak_distance(signal, sampling_rate=100):
     
     return max(int(dominant_period * 0.5), 1)  # Use half the period as peak distance
 
-def detect_valleys(y_data, sampling_rate=100, prominence=0.005):
+def detect_valleys(y_data, sampling_rate=100, prominence=0.002):
     """
     Detect valleys (negative peaks) with dynamic distance calculation.
     """
