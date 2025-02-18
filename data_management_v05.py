@@ -3,7 +3,7 @@ import json
 import numpy as np
 import re
 from shared_variables import enableInterpolation, isFoundFirstTimestamp, firstTimestamp, imus, firstPacket, timeToCallMetrics, sensorDataToUpload, imu1Queue, imu2Queue, imu3Queue, imu4Queue, mqttState, enableMetrics, imu1FinalQueue, imu2FinalQueue, imu3FinalQueue, imu4FinalQueue, csv_file_path, imus, counter, startReceiving, lastDataTime, enableConnectionToAPI, feedbackData
-
+from mqtt_messages import send_voice_instructions
 from New_Metrics.MaintainingFocus_HeadUpandDown import get_metrics as get_metrics_MaintainingFocus_HeadUpandDown
 from New_Metrics.MaintainingFocus_Headrotation import get_metrics as get_metrics_MaintainingFocus_Headrotation
 from New_Metrics.SeatedBendingOver_v1 import get_metrics as get_metrics_SeatedBendingOver
@@ -24,13 +24,16 @@ from New_Metrics.ForwardWalkingYaw import get_metrics as get_metricsForwardWalki
 from New_Metrics.ForwardWalkingTilt import get_metrics as get_metricsForwardWalkingTilt
 from New_Metrics.SideStepping import get_metrics as get_metrics_SideStepping
 from New_Metrics.WalkingHorizontalHeadTurns import get_metrics as get_metrics_WalkingHorizontalHeadTurns
+from New_Metrics.Hip_External import get_metrics as get_metrics_HipExternal
+from New_Metrics.Lateral_Trunk_Flexion import get_metrics as get_metrics_LateralTrunkFlexion
+from New_Metrics.Calf_Stretch import get_metrics as get_metrics_CalfStretch
+from mqtt_messages import init_mqtt_client
 from csv_management import write_in_files
 from api_management import upload_sensor_data, postExerciseScore
 from sensor_data import SensorData
 import multiprocessing as mp
 from scipy.interpolate import interp1d
 import csv
-from mqtt_messages import init_mqtt_client, set_language, start_exercise_demo, send_voice_instructions,send_message_with_speech_to_text,send_message_with_speech_to_text_2
 
 
 
@@ -134,6 +137,12 @@ def get_data_tranch(q1, q2, q3, q4, counter, exercise):
             metrics = get_metrics_SideStepping(imu1List, imu2List, imu3List, imu4List, counter)
         elif exercise == 'exer_20' :
             metrics = get_metrics_WalkingHorizontalHeadTurns(imu1List, imu2List, imu3List, imu4List, counter)
+        elif exercise == 'exer_21':
+            metrics = get_metrics_HipExternal(imu1List, imu2List, imu3List, imu4List, counter)
+        elif exercise == 'exer_22':
+            metrics = get_metrics_LateralTrunkFlexion(imu1List, imu2List, imu3List, imu4List, counter)
+        elif exercise == 'exer_23' :
+            metrics = get_metrics_CalfStretch(imu1List, imu2List, imu3List, imu4List, counter)
         else:
             metrics = None
         return metrics
@@ -1724,7 +1733,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 if final_metrics is not None:
                                     metrics_queue.put(final_metrics)
                                 break;
-    elif exercise_code == 'exer_24':
+    elif exercise_code == 'exer_23':
         
         while INTERVALS < 4 or not q.empty():
             #if (q.empty()):
