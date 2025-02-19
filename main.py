@@ -71,7 +71,7 @@ DATA_ENDPOINT = f"{FILE_STORAGE_BASE_URL}/Data"
 def get_api_key():
     """Fetch API key from config file."""
     config = configparser.ConfigParser()
-    config.read('/home/uoi/Documents/TeleRehaB_DSS/config.ini')
+    config.read('config.ini')
     return config['API'].get('key_edge', '')
 
 def convert_log_to_txt(log_file):
@@ -162,7 +162,7 @@ sys.stderr = StreamToLogger(logger.error)
 def get_devices():
     """Fetch the daily schedule from the API."""
     config = configparser.ConfigParser()
-    config.read('/home/uoi/Documents/TeleRehaB_DSS/config.ini')
+    config.read('config.ini')
     api_key_edge = config['API'].get('key_edge', '')
     
     url = 'http://telerehab-develop.biomed.ntua.gr/api/PatientDeviceSet'
@@ -180,7 +180,7 @@ def get_devices():
 def get_daily_schedule():
     """Fetch the daily schedule from the API."""
     config = configparser.ConfigParser()
-    config.read('/home/uoi/Documents/TeleRehaB_DSS/config.ini')
+    config.read('config.ini')
     api_key_edge = config['API'].get('key_edge', '')
     
     url = 'http://telerehab-develop.biomed.ntua.gr/api/PatientSchedule/daily'
@@ -198,7 +198,7 @@ def get_daily_schedule():
 def post_results(score, exercise_id):
     """Fetch the daily schedule from the API."""
     config = configparser.ConfigParser()
-    config.read('/home/uoi/Documents/TeleRehaB_DSS/config.ini')
+    config.read('config.ini')
     api_key_edge = config['API'].get('key_edge', '')
     """Post metrics to the PerformanceScore API."""
     try:

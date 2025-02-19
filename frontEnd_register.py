@@ -6,7 +6,7 @@ from PIL import Image, ImageTk
 
 # Load API key from config file
 config = configparser.ConfigParser()
-config.read('/home/uoi/Documents/TeleRehaB_DSS/config2.ini')
+config.read('config.ini')
 api_key = config['API'].get('key_doctor', '')
 
 # Define the API endpoints
@@ -27,7 +27,7 @@ def login(username, password):
     if response.status_code == 200:
         token = response.json().get('message')
         config['API']['key_doctor'] = token
-        with open('/home/uoi/Documents/TeleRehaB_DSS/config2.ini', 'w') as configfile:
+        with open('config.ini', 'w') as configfile:
             config.write(configfile)
         return token
     else:
@@ -70,7 +70,7 @@ def create_gui():
         api_key = patient_combobox.api_keys.get(selected_patient_id)
         if api_key:
             config['API']['key_edge'] = api_key
-            with open('/home/uoi/Documents/TeleRehaB_DSS/config.ini', 'w') as configfile:
+            with open('config.ini', 'w') as configfile:
                 config.write(configfile)
             api_key_text.delete(1.0, tk.END)
             api_key_text.insert(tk.END, api_key)
