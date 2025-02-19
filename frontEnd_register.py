@@ -80,7 +80,7 @@ def create_gui():
     root.title("Register Edge Computer")
 
     # Load and display logo
-    logo = Image.open("/home/uoi/Documents/TeleRehaB_DSS/logo.png")  # Replace with the correct path to your logo
+    logo = Image.open("logo.png")  # Replace with the correct path to your logo
     logo = logo.resize((300, 200), Image.ANTIALIAS)
     logo = ImageTk.PhotoImage(logo)
     logo_label = tk.Label(root, image=logo)
