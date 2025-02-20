@@ -326,7 +326,8 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 exercise_code  # Pass the exercise code
                             )
 
-                            
+                            if (INTERVALS==2) and metrics["total_metrics"]["number_of_movements"]>2:
+                                send_voice_instructions("bph0080")
 
                             scheduleQueue.get()  # Consume the scheduled task
                             INTERVALS += 1
@@ -394,6 +395,10 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 exercise_code  # Pass the exercise code
                             )
 
+
+                            if (INTERVALS==2) and metrics["total_metrics"]["number_of_movements"]>2:
+                                send_voice_instructions("bph0080")
+                            
                             scheduleQueue.get()  # Consume the scheduled task
                             INTERVALS += 1
                             print(f"Intervals = {INTERVALS}")
@@ -460,6 +465,16 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 exercise_code  # Pass the exercise code
                             )
 
+
+                            if (INTERVALS==2) and metrics["total_metrics"]["number_of_movements"]>1:
+                                send_voice_instructions("bph0080")
+                            
+                            if metrics["total_metrics"]["number_of_movements"]>=5:
+                                while not q.empty():
+                                    q.get()
+        
+                                return  # Exit the function immediately to stop the exercise
+                            
                             scheduleQueue.get()  # Consume the scheduled task
                             INTERVALS += 1
                             print(f"Intervals = {INTERVALS}")
@@ -518,7 +533,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             # interpolate
                             process_and_interpolate_imus(imu_data, target_rate_hz=100)  # 100 Hz target rate
 
-                            get_data_tranch(
+                            metrics = get_data_tranch(
                                 safe_get_imu_queue(imu_data, 'HEAD', manager.Queue()),  # imu1Queue
                                 safe_get_imu_queue(imu_data, 'PELVIS', manager.Queue()),  # imu2Queue
                                 safe_get_imu_queue(imu_data, 'LEFTFOOT', manager.Queue()),  # imu3Queue
@@ -527,13 +542,21 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 exercise_code  # Pass the exercise code
                             )
 
+                            if (INTERVALS==2) and metrics["total_metrics"]["number_of_movements"]>1:
+                                send_voice_instructions("bph0080")
+                            
+                            if metrics["total_metrics"]["number_of_movements"]>=10:
+                                while not q.empty():
+                                    q.get()
+                                return
+                            
                             scheduleQueue.get()  # Consume the scheduled task
                             INTERVALS += 1
                             print(f"Intervals = {INTERVALS}")
 
                             if INTERVALS == 4:
                                 print("Processing the entire data stream...")
-                                get_data_tranch(
+                                final_metrics = get_data_tranch(
                                     imu_data.get('HEAD', [None, None, manager.Queue()])[2],  # imu1FinalQueue
                                     imu_data.get('PELVIS', [None, None, manager.Queue()])[2],  # imu2FinalQueue
                                     imu_data.get('LEFTFOOT', [None, None, manager.Queue()])[2],  # imu3FinalQueue
@@ -584,7 +607,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             # interpolate
                             process_and_interpolate_imus(imu_data, target_rate_hz=100)  # 100 Hz target rate
 
-                            get_data_tranch(
+                            metrics = get_data_tranch(
                                 safe_get_imu_queue(imu_data, 'HEAD', manager.Queue()),  # imu1Queue
                                 safe_get_imu_queue(imu_data, 'PELVIS', manager.Queue()),  # imu2Queue
                                 safe_get_imu_queue(imu_data, 'LEFTFOOT', manager.Queue()),  # imu3Queue
@@ -599,7 +622,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
 
                             if INTERVALS == 4:
                                 print("Processing the entire data stream...")
-                                get_data_tranch(
+                                final_metrics = get_data_tranch(
                                     imu_data.get('HEAD', [None, None, manager.Queue()])[2],  # imu1FinalQueue
                                     imu_data.get('PELVIS', [None, None, manager.Queue()])[2],  # imu2FinalQueue
                                     imu_data.get('LEFTFOOT', [None, None, manager.Queue()])[2],  # imu3FinalQueue
@@ -782,7 +805,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             # interpolate
                             process_and_interpolate_imus(imu_data, target_rate_hz=100)  # 100 Hz target rate
 
-                            get_data_tranch(
+                            metrics = get_data_tranch(
                                 safe_get_imu_queue(imu_data, 'HEAD', manager.Queue()),  # imu1Queue
                                 safe_get_imu_queue(imu_data, 'PELVIS', manager.Queue()),  # imu2Queue
                                 safe_get_imu_queue(imu_data, 'LEFTFOOT', manager.Queue()),  # imu3Queue
@@ -791,13 +814,22 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 exercise_code  # Pass the exercise code
                             )
 
+
+                            if (INTERVALS==2) and metrics["total_metrics"]["number_of_movements"]>1:
+                                send_voice_instructions("bph0080")
+                            
+                            if metrics["total_metrics"]["number_of_movements"] >=5:
+                                while not q.empty():
+                                    q.get()
+                                return
+                            
                             scheduleQueue.get()  # Consume the scheduled task
                             INTERVALS += 1
                             print(f"Intervals = {INTERVALS}")
 
                             if INTERVALS == 4:
                                 print("Processing the entire data stream...")
-                                get_data_tranch(
+                                final_metrics = get_data_tranch(
                                     imu_data.get('HEAD', [None, None, manager.Queue()])[2],  # imu1FinalQueue
                                     imu_data.get('PELVIS', [None, None, manager.Queue()])[2],  # imu2FinalQueue
                                     imu_data.get('LEFTFOOT', [None, None, manager.Queue()])[2],  # imu3FinalQueue
@@ -848,7 +880,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             # interpolate
                             process_and_interpolate_imus(imu_data, target_rate_hz=100)  # 100 Hz target rate
 
-                            get_data_tranch(
+                            metrics = get_data_tranch(
                                 safe_get_imu_queue(imu_data, 'HEAD', manager.Queue()),  # imu1Queue
                                 safe_get_imu_queue(imu_data, 'PELVIS', manager.Queue()),  # imu2Queue
                                 safe_get_imu_queue(imu_data, 'LEFTFOOT', manager.Queue()),  # imu3Queue
@@ -857,13 +889,16 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 exercise_code  # Pass the exercise code
                             )
 
+                            if (INTERVALS==2) and metrics["total_metrics"]["number_of_movements"]>2:
+                                send_voice_instructions("bph0053")
+                            
                             scheduleQueue.get()  # Consume the scheduled task
                             INTERVALS += 1
                             print(f"Intervals = {INTERVALS}")
 
                             if INTERVALS == 4:
                                 print("Processing the entire data stream...")
-                                get_data_tranch(
+                                final_metrics = get_data_tranch(
                                     imu_data.get('HEAD', [None, None, manager.Queue()])[2],  # imu1FinalQueue
                                     imu_data.get('PELVIS', [None, None, manager.Queue()])[2],  # imu2FinalQueue
                                     imu_data.get('LEFTFOOT', [None, None, manager.Queue()])[2],  # imu3FinalQueue
@@ -980,7 +1015,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             # interpolate
                             process_and_interpolate_imus(imu_data, target_rate_hz=100)  # 100 Hz target rate
 
-                            get_data_tranch(
+                            metrics = get_data_tranch(
                                 safe_get_imu_queue(imu_data, 'HEAD', manager.Queue()),  # imu1Queue
                                 safe_get_imu_queue(imu_data, 'PELVIS', manager.Queue()),  # imu2Queue
                                 safe_get_imu_queue(imu_data, 'LEFTFOOT', manager.Queue()),  # imu3Queue
@@ -989,13 +1024,22 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 exercise_code  # Pass the exercise code
                             )
 
+
+                            if (INTERVALS==2) and metrics["total_metrics"]["number_of_movements"]>1:
+                                send_voice_instructions("bph0080")
+                            
+                            if metrics["total_metrics"]["number_of_movements"] >=5:
+                                while not q.empty():
+                                    q.get()
+                                return
+                            
                             scheduleQueue.get()  # Consume the scheduled task
                             INTERVALS += 1
                             print(f"Intervals = {INTERVALS}")
 
                             if INTERVALS == 4:
                                 print("Processing the entire data stream...")
-                                get_data_tranch(
+                                final_metrics = get_data_tranch(
                                     imu_data.get('HEAD', [None, None, manager.Queue()])[2],  # imu1FinalQueue
                                     imu_data.get('PELVIS', [None, None, manager.Queue()])[2],  # imu2FinalQueue
                                     imu_data.get('LEFTFOOT', [None, None, manager.Queue()])[2],  # imu3FinalQueue

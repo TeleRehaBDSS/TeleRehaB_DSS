@@ -243,14 +243,14 @@ def runScenario(queueData):
     time.sleep(2)
 
     try:
-        set_language("GR")
+        set_language("EN")
     except Exception as e:
         print(f"Language selection failed{e}")
         return
 
     try:
         metrics_queue = mp.Queue()
-        polar_queue = mp.Queue()
+        #polar_queue = mp.Queue()
         logger.info('Running scenario...')
         
         while True:
@@ -350,8 +350,8 @@ def runScenario(queueData):
                 scheduler_process.start()
 
                 #Start the process to receive Polar data
-                polar_proc = mp.Process(target=start_ble_process, args=(0, polar_queue))  # Adjust adapter index if needed
-                polar_proc.start()
+                # polar_proc = mp.Process(target=start_ble_process, args=(0, polar_queue))  # Adjust adapter index if needed
+                # polar_proc.start()
 
                 # Wait for Polar connection or failure
                 time.sleep(5)  # Give some time to attempt connection
@@ -378,14 +378,14 @@ def runScenario(queueData):
                 time.sleep(2)
 
                 # Check if Polar connection failed early
-                if not polar_proc.is_alive() or (not polar_queue.empty() and polar_queue.get() is None):
-                    logging.warning("Polar H10 is not connected. Proceeding without heart rate data.")
-                    polar_proc.terminate()
-                    polar_proc.join()
+                # if not polar_proc.is_alive() or (not polar_queue.empty() and polar_queue.get() is None):
+                #     logging.warning("Polar H10 is not connected. Proceeding without heart rate data.")
+                #     polar_proc.terminate()
+                #     polar_proc.join()
                 
-                polar_data = []
-                while not polar_queue.empty():
-                    polar_data.append(polar_queue.get())
+                # polar_data = []
+                # while not polar_queue.empty():
+                #     polar_data.append(polar_queue.get())
                 
                 # Post metrics after the exercise ends
 
@@ -400,7 +400,7 @@ def runScenario(queueData):
                     print(f"Metrics for Exercise {exercise['exerciseId']}: {metrics}")
 
                     #Post the results
-                    metrics["polar_data"] = polar_data
+                    #metrics["polar_data"] = polar_data
                     post_results(json.dumps(metrics), exercise['exerciseId'])
                    
                 else:
