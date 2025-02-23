@@ -3,10 +3,18 @@ import configparser
 import tkinter as tk
 from tkinter import messagebox, ttk
 from PIL import Image, ImageTk
+from pathlib import Path
+
+# Get the directory where the script is located
+BASE_DIR = Path(__file__).resolve().parent
+
+# Construct the paths for config and logo
+CONFIG_PATH = BASE_DIR / 'config.ini'
+LOGO_PATH = BASE_DIR / 'logo.png'
 
 # Load API key from config file
 config = configparser.ConfigParser()
-config.read('config.ini')
+config.read(CONFIG_PATH)
 api_key = config['API'].get('key_doctor', '')
 
 # Define the API endpoints
@@ -27,7 +35,7 @@ def login(username, password):
     if response.status_code == 200:
         token = response.json().get('message')
         config['API']['key_doctor'] = token
-        with open('config.ini', 'w') as configfile:
+        with open(CONFIG_PATH, 'w') as configfile:
             config.write(configfile)
         return token
     else:
@@ -70,7 +78,7 @@ def create_gui():
         api_key = patient_combobox.api_keys.get(selected_patient_id)
         if api_key:
             config['API']['key_edge'] = api_key
-            with open('config.ini', 'w') as configfile:
+            with open(CONFIG_PATH, 'w') as configfile:
                 config.write(configfile)
             api_key_text.delete(1.0, tk.END)
             api_key_text.insert(tk.END, api_key)
@@ -80,7 +88,7 @@ def create_gui():
     root.title("Register Edge Computer")
 
     # Load and display logo
-    logo = Image.open("logo.png")  # Replace with the correct path to your logo
+    logo = Image.open(LOGO_PATH)  # Replace with the correct path to your logo
     logo = logo.resize((300, 200), Image.ANTIALIAS)
     logo = ImageTk.PhotoImage(logo)
     logo_label = tk.Label(root, image=logo)
