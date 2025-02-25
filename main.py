@@ -342,9 +342,6 @@ def runScenario(queueData):
                 client.publish("IMUsettings", config_message)
                 time.sleep(2)
                 client.publish('StartRecording', 'start')
-
-                client.publish('EXIT', 'EXIT')
-
                 # Start the scheduler process
                 scheduler_process = mp.Process(target=scheduler, args=(scheduleQueue,))
                 scheduler_process.start()

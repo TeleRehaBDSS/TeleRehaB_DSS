@@ -356,17 +356,7 @@ def getMetricsSeatingOld03(Limu1, Limu2, plotdiagrams):
             end_index = head_maxima_filtered[i + 1]
             chest_to_chin_times.append((end_index - start_index) * time_interval)
 
-        # # Plotting to debug movement detection
-        # plt.figure(figsize=(12, 6))
-        # plt.plot(pelvis_normalized_pitch, label='Filtered Pitch Signal', color='blue')
-        # plt.scatter(pelvis_maxima_filtered, pelvis_filtered[pelvis_maxima_filtered], color='green', label='Maxima')
-        # plt.scatter(pelvis_minima_filtered, pelvis_filtered[pelvis_minima_filtered], color='red', label='Minima')
-        # plt.title('Pitch Signal with Detected Maxima and Minima')
-        # plt.xlabel('Sample Index')
-        # plt.ylabel('Pitch (degrees)')
-        # plt.legend()
-        # plt.grid(True)
-        # plt.show()
+
 
         metrics_data = {   
             "total_metrics": {
