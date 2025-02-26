@@ -255,7 +255,7 @@ def safe_get_imu_queue(imu_data, body_part, default_queue):
 
 
 def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
-
+    init_mqtt_client()
     # Initialize multiprocessing manager
     manager = mp.Manager()
     imu_config, exercise_code = parse_config_message(config_message)
@@ -326,7 +326,8 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 exercise_code  # Pass the exercise code
                             )
 
-                            if (INTERVALS==2) and metrics["total_metrics"]["number_of_movements"]>2:
+                            metrics_dict = json.loads(metrics)
+                            if ((INTERVALS==2) and metrics_dict["total_metrics"]["number_of_movements"]>2):
                                 send_voice_instructions("bph0080")
 
                             scheduleQueue.get()  # Consume the scheduled task
