@@ -267,15 +267,26 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
 
     global isFoundFirstTimestamp, enableInterpolation
     # Sample configuration message
-    jjj = 0;
     INTERVALS = 0;
     # Set of body parts that have received at least one sample
     received_body_parts = set()
 
+     # **Clear old queue data**
+    for role in imu_data:
+        imu_list, imu_queue, imu_finalqueue = imu_data[role]
+        imu_list.clear()  # Clear the stored sensor list
+        while not imu_queue.empty():
+            imu_queue.get()  # Empty the real-time processing queue
+        while not imu_finalqueue.empty():
+            imu_finalqueue.get()  # Empty the final processing queue
+    
     # The set of body parts expected based on the configuration
     expected_body_parts = {key for key, value in imu_data.items() if value[1] != "OFF"}
     print('expected_body_parts = ', expected_body_parts)
-
+    
+    # If the shared data queue `q` contains old data, clear it before processing the new config
+    while not q.empty():
+        q.get()
 
     if exercise_code == 'exer_01':
         while INTERVALS < 4 or not q.empty():
@@ -287,7 +298,6 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
 
                 # Use deviceMacAddress as the body part identifier
                 body_part = sensor_data.device_mac_address
-                #print(body_part)
 
                 if body_part in expected_body_parts:
                     received_body_parts.add(body_part);
@@ -311,7 +321,6 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                         if message == "GO":
                             # Call the data processing function based on the queues
                             print('I am calling get_data_tranch')
-                            # interpolate
                             process_and_interpolate_imus(imu_data, target_rate_hz=100)  # 100 Hz target rate
 
                             metrics = get_data_tranch(
@@ -324,14 +333,21 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             )
 
                             metrics_dict = json.loads(metrics)
-                            if ((INTERVALS==2) and metrics_dict["total_metrics"]["number_of_movements"]>2):
+                            if ((INTERVALS==1) and metrics_dict["total_metrics"]["number_of_movements"]>2):
                                 send_voice_instructions("bph0080")
 
+                            if ((INTERVALS==2) and metrics_dict["total_metrics"]["number_of_movements"]>5):
+                                send_voice_instructions("bph0085")
+
+                            if ((INTERVALS==3) and metrics_dict["total_metrics"]["number_of_movements"]>10):
+                                send_voice_instructions("bph0079")
+                            
                             scheduleQueue.get()  # Consume the scheduled task
                             INTERVALS += 1
                             print(f"Intervals = {INTERVALS}")
 
                             if INTERVALS == 4:
+                                send_voice_instructions("bph0083")
                                 print("Processing the entire data stream...")
                                 final_metrics = get_data_tranch(
                                     imu_data.get('HEAD', [None, None, manager.Queue()])[2],  # imu1FinalQueue
@@ -346,10 +362,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 break;
     elif exercise_code == 'exer_02':
         while INTERVALS < 4 or not q.empty():
-            #if (q.empty()):
-            #    print('empty q')
             data = q.get()  # Read data from the dataQueue
-            #print(data)
 
             if ":" in data:  # Check for valid sensor data format
                 # Convert JSON data to SensorData object
@@ -357,7 +370,6 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
 
                 # Use deviceMacAddress as the body part identifier
                 body_part = sensor_data.device_mac_address
-                #print(body_part)
 
                 if body_part in expected_body_parts:
                     received_body_parts.add(body_part);
@@ -381,7 +393,6 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                         if message == "GO":
                             # Call the data processing function based on the queues
                             print('I am calling get_data_tranch')
-                            # interpolate
                             process_and_interpolate_imus(imu_data, target_rate_hz=100)  # 100 Hz target rate
 
                             metrics = get_data_tranch(
@@ -394,14 +405,18 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             )
 
                             metrics_dict = json.loads(metrics)
-                            if ((INTERVALS==2) and metrics_dict["total_metrics"]["number_of_movements"]>2):
-                                send_voice_instructions("bph0080")
-                            
+                            if ((INTERVALS==1) and metrics_dict["total_metrics"]["number_of_movements"]>2):
+                                send_voice_instructions("bph0081")
+                            if ((INTERVALS==2) and metrics_dict["total_metrics"]["number_of_movements"]>5):
+                                send_voice_instructions("bph0085")
+                            if ((INTERVALS==3) and metrics_dict["total_metrics"]["number_of_movements"]>10):
+                                send_voice_instructions("bph0086")
                             scheduleQueue.get()  # Consume the scheduled task
                             INTERVALS += 1
                             print(f"Intervals = {INTERVALS}")
 
                             if INTERVALS == 4:
+                                send_voice_instructions("bph0083")
                                 print("Processing the entire data stream...")
                                 final_metrics = get_data_tranch(
                                     imu_data.get('HEAD', [None, None, manager.Queue()])[2],  # imu1FinalQueue
@@ -414,12 +429,9 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 if final_metrics is not None:
                                     metrics_queue.put(final_metrics)
                                 break;
-    elif exercise_code == 'exer_03':
+    elif exercise_code == 'exer_03': #Sitting Bending Over
         while INTERVALS < 4 or not q.empty():
-            #if (q.empty()):
-            #    print('empty q')
             data = q.get()  # Read data from the dataQueue
-            #print(data)
 
             if ":" in data:  # Check for valid sensor data format
                 # Convert JSON data to SensorData object
@@ -427,7 +439,6 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
 
                 # Use deviceMacAddress as the body part identifier
                 body_part = sensor_data.device_mac_address
-                #print(body_part)
 
                 if body_part in expected_body_parts:
                     received_body_parts.add(body_part);
@@ -451,7 +462,6 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                         if message == "GO":
                             # Call the data processing function based on the queues
                             print('I am calling get_data_tranch')
-                            # interpolate
                             process_and_interpolate_imus(imu_data, target_rate_hz=100)  # 100 Hz target rate
 
                             metrics = get_data_tranch(
@@ -463,12 +473,18 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 exercise_code  # Pass the exercise code
                             )
 
-
                             metrics_dict = json.loads(metrics)
-                            if ((INTERVALS==2) and metrics_dict["total_metrics"]["number_of_movements"]>2):
-                                send_voice_instructions("bph0080")
-                            
+
+                            if ((INTERVALS==1) and metrics_dict["total_metrics"]["number_of_movements"]>2):
+                                send_voice_instructions("bph0085")
+
+                            if ((INTERVALS==3) and metrics_dict["total_metrics"]["number_of_movements"]<5):
+                                send_voice_instructions("bph0056")
+
                             if metrics_dict["total_metrics"]["number_of_movements"]>=5:
+                                send_voice_instructions("bph0083")
+                                final_metrics = metrics
+                                metrics_queue.put(final_metrics)
                                 while not q.empty():
                                     q.get()
                                 return  # Exit the function immediately to stop the exercise
@@ -478,6 +494,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             print(f"Intervals = {INTERVALS}")
 
                             if INTERVALS == 4:
+                                send_voice_instructions("bph0083")
                                 print("Processing the entire data stream...")
                                 final_metrics = get_data_tranch(
                                     imu_data.get('HEAD', [None, None, manager.Queue()])[2],  # imu1FinalQueue
@@ -491,12 +508,10 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                     metrics_queue.put(final_metrics)
                                 break;
 
-    elif exercise_code == 'exer_04':
+    elif exercise_code == 'exer_04': #Trunk Rotation
         while INTERVALS < 4 or not q.empty():
-            #if (q.empty()):
-            #    print('empty q')
+
             data = q.get()  # Read data from the dataQueue
-            #print(data)
 
             if ":" in data:  # Check for valid sensor data format
                 # Convert JSON data to SensorData object
@@ -504,7 +519,6 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
 
                 # Use deviceMacAddress as the body part identifier
                 body_part = sensor_data.device_mac_address
-                #print(body_part)
 
                 if body_part in expected_body_parts:
                     received_body_parts.add(body_part);
@@ -541,12 +555,19 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             )
 
                             metrics_dict = json.loads(metrics)
-                            if ((INTERVALS==2) and metrics_dict["total_metrics"]["number_of_movements"]>2):
+
+                            if ((INTERVALS==1) and metrics_dict["total_metrics"]["number_of_movements"]>2):
                                 send_voice_instructions("bph0080")
-                            
+                            if ((INTERVALS==2) and metrics_dict["total_metrics"]["number_of_movements"]>6):
+                                send_voice_instructions("bph0086")
+
                             if metrics_dict["total_metrics"]["number_of_movements"]>=20:
+                                send_voice_instructions("bph0083") 
                                 while not q.empty():
                                     q.get()
+                                final_metrics = metrics
+                                if final_metrics is not None:
+                                    metrics_queue.put(final_metrics)
                                 return
                             
                             scheduleQueue.get()  # Consume the scheduled task
@@ -554,6 +575,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             print(f"Intervals = {INTERVALS}")
 
                             if INTERVALS == 4:
+                                send_voice_instructions("bph0083")
                                 print("Processing the entire data stream...")
                                 final_metrics = get_data_tranch(
                                     imu_data.get('HEAD', [None, None, manager.Queue()])[2],  # imu1FinalQueue
@@ -568,10 +590,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 break;
     elif exercise_code == 'exer_05': #Toe Raises
         while INTERVALS < 4 or not q.empty():
-            #if (q.empty()):
-            #    print('empty q')
             data = q.get()  # Read data from the dataQueue
-            #print(data)
 
             if ":" in data:  # Check for valid sensor data format
                 # Convert JSON data to SensorData object
@@ -579,7 +598,6 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
 
                 # Use deviceMacAddress as the body part identifier
                 body_part = sensor_data.device_mac_address
-                #print(body_part)
 
                 if body_part in expected_body_parts:
                     received_body_parts.add(body_part);
@@ -603,7 +621,6 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                         if message == "GO":
                             # Call the data processing function based on the queues
                             print('I am calling get_data_tranch')
-                            # interpolate
                             process_and_interpolate_imus(imu_data, target_rate_hz=100)  # 100 Hz target rate
 
                             metrics = get_data_tranch(
@@ -616,21 +633,28 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             )
 
                             metrics_dict = json.loads(metrics)
-                            if ((INTERVALS==2) and (metrics_dict["total_metrics"]['LEFT LEG']["number_of_movements"] + metrics_dict["total_metrics"]['RIGHT LEG']["number_of_movements"]) >5):
+
+                            if ((INTERVALS==1) and (metrics_dict["total_metrics"]['LEFT LEG']["number_of_movements"] + metrics_dict["total_metrics"]['RIGHT LEG']["number_of_movements"]) >5):
                                 send_voice_instructions("bph0080")
                             
-                            
-                            if (metrics_dict["total_metrics"]['LEFT LEG']["number_of_movements"] + metrics_dict["total_metrics"]['RIGHT LEG']["number_of_movements"]) >= 20:
+                            if ((INTERVALS==2) and (metrics_dict["total_metrics"]['LEFT LEG']["number_of_movements"] + metrics_dict["total_metrics"]['RIGHT LEG']["number_of_movements"]) >10):
+                                send_voice_instructions("bph0085")
+
+                            if (metrics_dict["total_metrics"]['LEFT LEG']["number_of_movements"] + metrics_dict["total_metrics"]['RIGHT LEG']["number_of_movements"]) >= 15:
+                                send_voice_instructions("bph0083")
+                                final_metrics =  metrics
+                                if final_metrics is not None:
+                                    metrics_queue.put(final_metrics)
                                 while not q.empty():
                                     q.get()
                                 return  # Exit the function immediately to stop the exercise
 
-                            
                             scheduleQueue.get()  # Consume the scheduled task
                             INTERVALS += 1
                             print(f"Intervals = {INTERVALS}")
 
                             if INTERVALS == 4:
+                                send_voice_instructions("bph0083")
                                 print("Processing the entire data stream...")
                                 final_metrics = get_data_tranch(
                                     imu_data.get('HEAD', [None, None, manager.Queue()])[2],  # imu1FinalQueue
@@ -645,10 +669,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 break;
     elif exercise_code == 'exer_06': #Heel Raises
         while INTERVALS < 4 or not q.empty():
-            #if (q.empty()):
-            #    print('empty q')
             data = q.get()  # Read data from the dataQueue
-            #print(data)
 
             if ":" in data:  # Check for valid sensor data format
                 # Convert JSON data to SensorData object
@@ -680,7 +701,6 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                         if message == "GO":
                             # Call the data processing function based on the queues
                             print('I am calling get_data_tranch')
-                            # interpolate
                             process_and_interpolate_imus(imu_data, target_rate_hz=100)  # 100 Hz target rate
 
                             metrics = get_data_tranch(
@@ -693,10 +713,17 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             )
 
                             metrics_dict = json.loads(metrics)
-                            if ((INTERVALS==2) and (metrics_dict["total_metrics"]['LEFT LEG']["number_of_movements"] + metrics_dict["total_metrics"]['RIGHT LEG']["number_of_movements"]) >5):
-                                send_voice_instructions("bph0080")
+                            if ((INTERVALS==1) and (metrics_dict["total_metrics"]['LEFT LEG']["number_of_movements"] + metrics_dict["total_metrics"]['RIGHT LEG']["number_of_movements"]) >5):
+                                send_voice_instructions("bph0081")
                             
-                            if (metrics_dict["total_metrics"]['LEFT LEG']["number_of_movements"] + metrics_dict["total_metrics"]['RIGHT LEG']["number_of_movements"]) >= 20:
+                            if ((INTERVALS==2) and (metrics_dict["total_metrics"]['LEFT LEG']["number_of_movements"] + metrics_dict["total_metrics"]['RIGHT LEG']["number_of_movements"]) >8):
+                                send_voice_instructions("bph0086")
+
+                            if (metrics_dict["total_metrics"]['LEFT LEG']["number_of_movements"] + metrics_dict["total_metrics"]['RIGHT LEG']["number_of_movements"]) >= 15:
+                                send_voice_instructions("bph0083")
+                                final_metrics = metrics
+                                if final_metrics is not None:
+                                    metrics_queue.put(final_metrics)
                                 while not q.empty():
                                     q.get()
                                 return  # Exit the function immediately to stop the exercise
@@ -706,6 +733,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             print(f"Intervals = {INTERVALS}")
 
                             if INTERVALS == 4:
+                                send_voice_instructions("bph0083")
                                 print("Processing the entire data stream...")
                                 final_metrics = get_data_tranch(
                                     imu_data.get('HEAD', [None, None, manager.Queue()])[2],  # imu1FinalQueue
@@ -720,10 +748,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 break;
     elif exercise_code == 'exer_07': #Seated Marching Spot
         while INTERVALS < 4 or not q.empty():
-            #if (q.empty()):
-            #    print('empty q')
             data = q.get()  # Read data from the dataQueue
-            #print(data)
 
             if ":" in data:  # Check for valid sensor data format
                 # Convert JSON data to SensorData object
@@ -731,7 +756,6 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
 
                 # Use deviceMacAddress as the body part identifier
                 body_part = sensor_data.device_mac_address
-                #print(body_part)
 
                 if body_part in expected_body_parts:
                     received_body_parts.add(body_part);
@@ -755,7 +779,6 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                         if message == "GO":
                             # Call the data processing function based on the queues
                             print('I am calling get_data_tranch')
-                            # interpolate
                             process_and_interpolate_imus(imu_data, target_rate_hz=100)  # 100 Hz target rate
 
                             metrics = get_data_tranch(
@@ -768,11 +791,17 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             )
                             
                             metrics_dict = json.loads(metrics)
-                            if ((INTERVALS==2) and (metrics_dict["total_metrics"]['LEFT LEG']["number_of_movements"] + metrics_dict["total_metrics"]['RIGHT LEG']["number_of_movements"]) >= 5):
-                                send_voice_instructions("bph0080")
+                            if ((INTERVALS==1) and (metrics_dict["total_metrics"]['LEFT LEG']["number_of_movements"] + metrics_dict["total_metrics"]['RIGHT LEG']["number_of_movements"]) >= 5):
+                                send_voice_instructions("bph0079")
+                            if ((INTERVALS==2) and (metrics_dict["total_metrics"]['LEFT LEG']["number_of_movements"] + metrics_dict["total_metrics"]['RIGHT LEG']["number_of_movements"]) >= 9):
+                                send_voice_instructions("bph0085")
                             
                             
-                            if (metrics_dict["total_metrics"]['LEFT LEG']["number_of_movements"] + metrics_dict["total_metrics"]['RIGHT LEG']["number_of_movements"]) >= 20:
+                            if (metrics_dict["total_metrics"]['LEFT LEG']["number_of_movements"] >=10) and (metrics_dict["total_metrics"]['RIGHT LEG']["number_of_movements"] >= 10):
+                                send_voice_instructions("bph0083")
+                                final_metrics = metrics
+                                if final_metrics is not None:
+                                    metrics_queue.put(final_metrics)
                                 while not q.empty():
                                     q.get()
                                 return  # Exit the function immediately to stop the exercise
@@ -782,6 +811,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             print(f"Intervals = {INTERVALS}")
 
                             if INTERVALS == 4:
+                                send_voice_instructions("bph0083")
                                 print("Processing the entire data stream...")
                                 final_metrics = get_data_tranch(
                                     imu_data.get('HEAD', [None, None, manager.Queue()])[2],  # imu1FinalQueue
@@ -796,10 +826,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 break;
     elif exercise_code == 'exer_08': #Sit To Stand
         while INTERVALS < 4 or not q.empty():
-            #if (q.empty()):
-            #    print('empty q')
             data = q.get()  # Read data from the dataQueue
-            #print(data)
 
             if ":" in data:  # Check for valid sensor data format
                 # Convert JSON data to SensorData object
@@ -807,7 +834,6 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
 
                 # Use deviceMacAddress as the body part identifier
                 body_part = sensor_data.device_mac_address
-                #print(body_part)
 
                 if body_part in expected_body_parts:
                     received_body_parts.add(body_part);
@@ -844,10 +870,18 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             )
 
                             metrics_dict = json.loads(metrics)
-                            if (INTERVALS==2) and metrics_dict["total_metrics"]["number_of_movements"]>1:
-                                send_voice_instructions("bph0080")
+                            if (INTERVALS==1) and metrics_dict["total_metrics"]["number_of_movements"]>1:
+                                send_voice_instructions("bph0079")
+                            if (INTERVALS==2) and metrics_dict["total_metrics"]["number_of_movements"]>3:
+                                send_voice_instructions("bph0086")
+                            if (INTERVALS==3) and metrics_dict["total_metrics"]["number_of_movements"]<5:
+                                send_voice_instructions("bph0056")    
                             
                             if metrics_dict["total_metrics"]["number_of_movements"] >=5:
+                                send_voice_instructions("bph0083")
+                                final_metrics = metrics
+                                if final_metrics is not None:
+                                    metrics_queue.put(final_metrics)
                                 while not q.empty():
                                     q.get()
                                 return
@@ -857,6 +891,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             print(f"Intervals = {INTERVALS}")
 
                             if INTERVALS == 4:
+                                send_voice_instructions("bph0083")
                                 print("Processing the entire data stream...")
                                 final_metrics = get_data_tranch(
                                     imu_data.get('HEAD', [None, None, manager.Queue()])[2],  # imu1FinalQueue
@@ -871,10 +906,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 break;
     elif exercise_code == 'exer_09': #Standing Balance
         while INTERVALS < 4 or not q.empty():
-            #if (q.empty()):
-            #    print('empty q')
             data = q.get()  # Read data from the dataQueue
-            #print(data)
 
             if ":" in data:  # Check for valid sensor data format
                 # Convert JSON data to SensorData object
@@ -882,7 +914,6 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
 
                 # Use deviceMacAddress as the body part identifier
                 body_part = sensor_data.device_mac_address
-                #print(body_part)
 
                 if body_part in expected_body_parts:
                     received_body_parts.add(body_part);
@@ -906,7 +937,6 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                         if message == "GO":
                             # Call the data processing function based on the queues
                             print('I am calling get_data_tranch')
-                            # interpolate
                             process_and_interpolate_imus(imu_data, target_rate_hz=100)  # 100 Hz target rate
 
                             metrics = get_data_tranch(
@@ -927,6 +957,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             print(f"Intervals = {INTERVALS}")
 
                             if INTERVALS == 4:
+                                send_voice_instructions("bph0083")
                                 print("Processing the entire data stream...")
                                 final_metrics = get_data_tranch(
                                     imu_data.get('HEAD', [None, None, manager.Queue()])[2],  # imu1FinalQueue
@@ -941,10 +972,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 break;
     elif exercise_code == 'exer_10': #Balance Foam
         while INTERVALS < 4 or not q.empty():
-            #if (q.empty()):
-            #    print('empty q')
             data = q.get()  # Read data from the dataQueue
-            #print(data)
 
             if ":" in data:  # Check for valid sensor data format
                 # Convert JSON data to SensorData object
@@ -952,7 +980,6 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
 
                 # Use deviceMacAddress as the body part identifier
                 body_part = sensor_data.device_mac_address
-                #print(body_part)
 
                 if body_part in expected_body_parts:
                     received_body_parts.add(body_part);
@@ -997,82 +1024,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             print(f"Intervals = {INTERVALS}")
 
                             if INTERVALS == 4:
-                                print("Processing the entire data stream...")
-                                get_data_tranch(
-                                    imu_data.get('HEAD', [None, None, manager.Queue()])[2],  # imu1FinalQueue
-                                    imu_data.get('PELVIS', [None, None, manager.Queue()])[2],  # imu2FinalQueue
-                                    imu_data.get('LEFTFOOT', [None, None, manager.Queue()])[2],  # imu3FinalQueue
-                                    imu_data.get('RIGHTFOOT', [None, None, manager.Queue()])[2],  # imu4FinalQueue
-                                    INTERVALS,
-                                    exercise_code
-                                )
-                                if final_metrics is not None:
-                                    metrics_queue.put(final_metrics)
-                                break;
-    elif exercise_code == 'exer_11': #Standing Bend Over
-        while INTERVALS < 4 or not q.empty():
-            #if (q.empty()):
-            #    print('empty q')
-            data = q.get()  # Read data from the dataQueue
-            #print(data)
-
-            if ":" in data:  # Check for valid sensor data format
-                # Convert JSON data to SensorData object
-                sensor_data = SensorData.from_json(data)
-
-                # Use deviceMacAddress as the body part identifier
-                body_part = sensor_data.device_mac_address
-                #print(body_part)
-
-                if body_part in expected_body_parts:
-                    received_body_parts.add(body_part);
-                
-                if (received_body_parts == expected_body_parts):
-                    scheduleQueue.put('startcounting')
-                    # Fetch the relevant lists and queues from imu_data
-                    if body_part in imu_data:
-                        imu_list, imu_queue, imu_finalqueue = imu_data[body_part]
-
-                        # Add the sensor data to the appropriate structures
-                        imu_list.append(sensor_data)
-                        imu_queue.put(sensor_data)
-                        imu_finalqueue.put(sensor_data)
-                    else:
-                        print(f"Unrecognized body part: {body_part}")
-
-                    # Check if there is something in the schedule queue
-                    if not scheduleQueue.empty():
-                        message = scheduleQueue.get()  # Block until a message is received
-                        if message == "GO":
-                            # Call the data processing function based on the queues
-                            print('I am calling get_data_tranch')
-                            # interpolate
-                            process_and_interpolate_imus(imu_data, target_rate_hz=100)  # 100 Hz target rate
-
-                            metrics = get_data_tranch(
-                                safe_get_imu_queue(imu_data, 'HEAD', manager.Queue()),  # imu1Queue
-                                safe_get_imu_queue(imu_data, 'PELVIS', manager.Queue()),  # imu2Queue
-                                safe_get_imu_queue(imu_data, 'LEFTFOOT', manager.Queue()),  # imu3Queue
-                                safe_get_imu_queue(imu_data, 'RIGHTFOOT', manager.Queue()),  # imu4Queue
-                                INTERVALS,  # Pass the counter variable
-                                exercise_code  # Pass the exercise code
-                            )
-
-                            
-                            metrics_dict = json.load(metrics)
-                            if (INTERVALS==2) and metrics_dict["total_metrics"]["number_of_movements"]>1:
-                                send_voice_instructions("bph0080")
-                            
-                            if metrics_dict["total_metrics"]["number_of_movements"] >=5:
-                                while not q.empty():
-                                    q.get()
-                                return
-                            
-                            scheduleQueue.get()  # Consume the scheduled task
-                            INTERVALS += 1
-                            print(f"Intervals = {INTERVALS}")
-
-                            if INTERVALS == 4:
+                                send_voice_instructions("bph0083")
                                 print("Processing the entire data stream...")
                                 final_metrics = get_data_tranch(
                                     imu_data.get('HEAD', [None, None, manager.Queue()])[2],  # imu1FinalQueue
@@ -1085,12 +1037,9 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 if final_metrics is not None:
                                     metrics_queue.put(final_metrics)
                                 break;
-    elif exercise_code == 'exer_12':
-        while INTERVALS < 5 or not q.empty():
-            #if (q.empty()):
-            #    print('empty q')
+    elif exercise_code == 'exer_11': #Standing Bend Over
+        while INTERVALS < 4 or not q.empty():
             data = q.get()  # Read data from the dataQueue
-            #print(data)
 
             if ":" in data:  # Check for valid sensor data format
                 # Convert JSON data to SensorData object
@@ -1098,7 +1047,83 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
 
                 # Use deviceMacAddress as the body part identifier
                 body_part = sensor_data.device_mac_address
-                #print(body_part)
+
+                if body_part in expected_body_parts:
+                    received_body_parts.add(body_part);
+                
+                if (received_body_parts == expected_body_parts):
+                    scheduleQueue.put('startcounting')
+                    # Fetch the relevant lists and queues from imu_data
+                    if body_part in imu_data:
+                        imu_list, imu_queue, imu_finalqueue = imu_data[body_part]
+
+                        # Add the sensor data to the appropriate structures
+                        imu_list.append(sensor_data)
+                        imu_queue.put(sensor_data)
+                        imu_finalqueue.put(sensor_data)
+                    else:
+                        print(f"Unrecognized body part: {body_part}")
+
+                    # Check if there is something in the schedule queue
+                    if not scheduleQueue.empty():
+                        message = scheduleQueue.get()  # Block until a message is received
+                        if message == "GO":
+                            # Call the data processing function based on the queues
+                            print('I am calling get_data_tranch')
+                            process_and_interpolate_imus(imu_data, target_rate_hz=100)  # 100 Hz target rate
+
+                            metrics = get_data_tranch(
+                                safe_get_imu_queue(imu_data, 'HEAD', manager.Queue()),  # imu1Queue
+                                safe_get_imu_queue(imu_data, 'PELVIS', manager.Queue()),  # imu2Queue
+                                safe_get_imu_queue(imu_data, 'LEFTFOOT', manager.Queue()),  # imu3Queue
+                                safe_get_imu_queue(imu_data, 'RIGHTFOOT', manager.Queue()),  # imu4Queue
+                                INTERVALS,  # Pass the counter variable
+                                exercise_code  # Pass the exercise code
+                            )
+
+                            metrics_dict = json.load(metrics)
+                            if (INTERVALS==1) and metrics_dict["total_metrics"]["number_of_movements"]>1:
+                                send_voice_instructions("bph0081")
+                            if (INTERVALS==2) and metrics_dict["total_metrics"]["number_of_movements"]>3:
+                                send_voice_instructions("bph0086")
+                            
+                            if metrics_dict["total_metrics"]["number_of_movements"] >=5:
+                                send_voice_instructions("bph0083")
+                                final_metrics = metrics
+                                if final_metrics is not None:
+                                    metrics_queue.put(final_metrics)
+                                while not q.empty():
+                                    q.get()
+                                return
+                            
+                            scheduleQueue.get()  # Consume the scheduled task
+                            INTERVALS += 1
+                            print(f"Intervals = {INTERVALS}")
+
+                            if INTERVALS == 4:
+                                send_voice_instructions("bph0083")
+                                print("Processing the entire data stream...")
+                                final_metrics = get_data_tranch(
+                                    imu_data.get('HEAD', [None, None, manager.Queue()])[2],  # imu1FinalQueue
+                                    imu_data.get('PELVIS', [None, None, manager.Queue()])[2],  # imu2FinalQueue
+                                    imu_data.get('LEFTFOOT', [None, None, manager.Queue()])[2],  # imu3FinalQueue
+                                    imu_data.get('RIGHTFOOT', [None, None, manager.Queue()])[2],  # imu4FinalQueue
+                                    INTERVALS,
+                                    exercise_code
+                                )
+                                if final_metrics is not None:
+                                    metrics_queue.put(final_metrics)
+                                break;
+    elif exercise_code == 'exer_12': #Standing Turn
+        while INTERVALS < 5 or not q.empty():
+            data = q.get()  # Read data from the dataQueue
+
+            if ":" in data:  # Check for valid sensor data format
+                # Convert JSON data to SensorData object
+                sensor_data = SensorData.from_json(data)
+
+                # Use deviceMacAddress as the body part identifier
+                body_part = sensor_data.device_mac_address
 
                 if body_part in expected_body_parts:
                     received_body_parts.add(body_part);
@@ -1135,7 +1160,6 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             )
 
                             metrics_dict = json.load(metrics)
-
 
                             scheduleQueue.get()  # Consume the scheduled task
                             INTERVALS += 1
@@ -1156,10 +1180,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 break;
     elif exercise_code == 'exer_13': #Lateral Weight Shifts
         while INTERVALS < 4 or not q.empty():
-            #if (q.empty()):
-            #    print('empty q')
             data = q.get()  # Read data from the dataQueue
-            #print(data)
 
             if ":" in data:  # Check for valid sensor data format
                 # Convert JSON data to SensorData object
@@ -1167,7 +1188,6 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
 
                 # Use deviceMacAddress as the body part identifier
                 body_part = sensor_data.device_mac_address
-                #print(body_part)
 
                 if body_part in expected_body_parts:
                     received_body_parts.add(body_part);
@@ -1191,7 +1211,6 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                         if message == "GO":
                             # Call the data processing function based on the queues
                             print('I am calling get_data_tranch')
-                            # interpolate
                             process_and_interpolate_imus(imu_data, target_rate_hz=100)  # 100 Hz target rate
 
                             metrics = get_data_tranch(
@@ -1204,13 +1223,30 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             )
 
                             metrics_dict=json.load(metrics)
+                            if ((INTERVALS==1) and (metrics_dict["total_metrics"]['LEFT LEG']["number_of_movements"] + metrics_dict["total_metrics"]['RIGHT LEG']["number_of_movements"]) >2):
+                                send_voice_instructions("bph0080")
+                            
+                            if ((INTERVALS==2) and (metrics_dict["total_metrics"]['LEFT LEG']["number_of_movements"] + metrics_dict["total_metrics"]['RIGHT LEG']["number_of_movements"]) >4):
+                                send_voice_instructions("bph0085")
+
+                            if (metrics_dict["total_metrics"]['LEFT LEG']["number_of_movements"] + metrics_dict["total_metrics"]['RIGHT LEG']["number_of_movements"]) >= 10:
+                                send_voice_instructions("bph0083")
+                                final_metrics =  metrics
+                                if final_metrics is not None:
+                                    metrics_queue.put(final_metrics)
+                                while not q.empty():
+                                    q.get()
+                                return  # Exit the function immediately to stop the exercise
+
+
                             scheduleQueue.get()  # Consume the scheduled task
                             INTERVALS += 1
                             print(f"Intervals = {INTERVALS}")
 
                             if INTERVALS == 4:
+                                send_voice_instructions("bph0083")
                                 print("Processing the entire data stream...")
-                                get_data_tranch(
+                                final_metrics = get_data_tranch(
                                     imu_data.get('HEAD', [None, None, manager.Queue()])[2],  # imu1FinalQueue
                                     imu_data.get('PELVIS', [None, None, manager.Queue()])[2],  # imu2FinalQueue
                                     imu_data.get('LEFTFOOT', [None, None, manager.Queue()])[2],  # imu3FinalQueue
@@ -1221,12 +1257,9 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 if final_metrics is not None:
                                     metrics_queue.put(final_metrics)
                                 break;
-    elif exercise_code == 'exer_14':
-        while INTERVALS < 4 or not q.empty():
-            #if (q.empty()):
-            #    print('empty q')
+    elif exercise_code == 'exer_14': #Limits of Stability
+        while INTERVALS < 2 or not q.empty():
             data = q.get()  # Read data from the dataQueue
-            #print(data)
 
             if ":" in data:  # Check for valid sensor data format
                 # Convert JSON data to SensorData object
@@ -1234,7 +1267,6 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
 
                 # Use deviceMacAddress as the body part identifier
                 body_part = sensor_data.device_mac_address
-                #print(body_part)
 
                 if body_part in expected_body_parts:
                     received_body_parts.add(body_part);
@@ -1258,10 +1290,77 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                         if message == "GO":
                             # Call the data processing function based on the queues
                             print('I am calling get_data_tranch')
-                            # interpolate
                             process_and_interpolate_imus(imu_data, target_rate_hz=100)  # 100 Hz target rate
 
-                            get_data_tranch(
+                            metrics = get_data_tranch(
+                                safe_get_imu_queue(imu_data, 'HEAD', manager.Queue()),  # imu1Queue
+                                safe_get_imu_queue(imu_data, 'PELVIS', manager.Queue()),  # imu2Queue
+                                safe_get_imu_queue(imu_data, 'LEFTFOOT', manager.Queue()),  # imu3Queue
+                                safe_get_imu_queue(imu_data, 'RIGHTFOOT', manager.Queue()),  # imu4Queue
+                                INTERVALS,  # Pass the counter variable
+                                exercise_code  # Pass the exercise code
+                            )
+                            
+                            metrics_dict = json.load(metrics)
+                            if (INTERVALS==0) and metrics_dict["total_metrics"]["number_of_movements"]>5:
+                                send_voice_instructions("bph0081")
+                            if (INTERVALS==1) and metrics_dict["total_metrics"]["number_of_movements"]>7:
+                                send_voice_instructions("bph0086")
+
+                            scheduleQueue.get()  # Consume the scheduled task
+                            INTERVALS += 1
+                            print(f"Intervals = {INTERVALS}")
+
+                            if INTERVALS == 2:
+                                send_voice_instructions("bph0083")
+                                print("Processing the entire data stream...")
+                                final_metrics = get_data_tranch(
+                                    imu_data.get('HEAD', [None, None, manager.Queue()])[2],  # imu1FinalQueue
+                                    imu_data.get('PELVIS', [None, None, manager.Queue()])[2],  # imu2FinalQueue
+                                    imu_data.get('LEFTFOOT', [None, None, manager.Queue()])[2],  # imu3FinalQueue
+                                    imu_data.get('RIGHTFOOT', [None, None, manager.Queue()])[2],  # imu4FinalQueue
+                                    INTERVALS,
+                                    exercise_code
+                                )
+                                if final_metrics is not None:
+                                    metrics_queue.put(final_metrics)
+                                break;
+    elif exercise_code == 'exer_15': #Forward Reach
+        while INTERVALS < 4 or not q.empty():
+            data = q.get()  # Read data from the dataQueue
+
+            if ":" in data:  # Check for valid sensor data format
+                # Convert JSON data to SensorData object
+                sensor_data = SensorData.from_json(data)
+
+                # Use deviceMacAddress as the body part identifier
+                body_part = sensor_data.device_mac_address
+
+                if body_part in expected_body_parts:
+                    received_body_parts.add(body_part);
+                
+                if (received_body_parts == expected_body_parts):
+                    scheduleQueue.put('startcounting')
+                    # Fetch the relevant lists and queues from imu_data
+                    if body_part in imu_data:
+                        imu_list, imu_queue, imu_finalqueue = imu_data[body_part]
+
+                        # Add the sensor data to the appropriate structures
+                        imu_list.append(sensor_data)
+                        imu_queue.put(sensor_data)
+                        imu_finalqueue.put(sensor_data)
+                    else:
+                        print(f"Unrecognized body part: {body_part}")
+
+                    # Check if there is something in the schedule queue
+                    if not scheduleQueue.empty():
+                        message = scheduleQueue.get()  # Block until a message is received
+                        if message == "GO":
+                            # Call the data processing function based on the queues
+                            print('I am calling get_data_tranch')
+                            process_and_interpolate_imus(imu_data, target_rate_hz=100)  # 100 Hz target rate
+
+                            metrics = get_data_tranch(
                                 safe_get_imu_queue(imu_data, 'HEAD', manager.Queue()),  # imu1Queue
                                 safe_get_imu_queue(imu_data, 'PELVIS', manager.Queue()),  # imu2Queue
                                 safe_get_imu_queue(imu_data, 'LEFTFOOT', manager.Queue()),  # imu3Queue
@@ -1270,11 +1369,30 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 exercise_code  # Pass the exercise code
                             )
 
+                            metrics_dict = json.load(metrics)
+
+                            if (INTERVALS==1) and metrics_dict["total_metrics"]["number_of_movements"]>2:
+                                send_voice_instructions("bph0079")
+                            if (INTERVALS==2) and metrics_dict["total_metrics"]["number_of_movements"]>5:
+                                send_voice_instructions("bph0085")
+                            if (INTERVALS==3) and metrics_dict["total_metrics"]["number_of_movements"]>12:
+                                send_voice_instructions("bph0086")
+
+                            if metrics_dict["total_metrics"]["number_of_movements"] >= 20:
+                                send_voice_instructions("bph0083")
+                                final_metrics = metrics
+                                if final_metrics is not None:
+                                    metrics_queue.put(final_metrics)
+                                while not q.empty():
+                                    q.get()
+                                return
+
                             scheduleQueue.get()  # Consume the scheduled task
                             INTERVALS += 1
                             print(f"Intervals = {INTERVALS}")
 
                             if INTERVALS == 4:
+                                send_voice_instructions("bph0083")
                                 print("Processing the entire data stream...")
                                 get_data_tranch(
                                     imu_data.get('HEAD', [None, None, manager.Queue()])[2],  # imu1FinalQueue
@@ -1287,12 +1405,9 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 if final_metrics is not None:
                                     metrics_queue.put(final_metrics)
                                 break;
-    elif exercise_code == 'exer_15':
+    elif exercise_code == 'exer_16': #Forward walking
         while INTERVALS < 4 or not q.empty():
-            #if (q.empty()):
-            #    print('empty q')
             data = q.get()  # Read data from the dataQueue
-            #print(data)
 
             if ":" in data:  # Check for valid sensor data format
                 # Convert JSON data to SensorData object
@@ -1300,7 +1415,6 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
 
                 # Use deviceMacAddress as the body part identifier
                 body_part = sensor_data.device_mac_address
-                #print(body_part)
 
                 if body_part in expected_body_parts:
                     received_body_parts.add(body_part);
@@ -1324,73 +1438,6 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                         if message == "GO":
                             # Call the data processing function based on the queues
                             print('I am calling get_data_tranch')
-                            # interpolate
-                            process_and_interpolate_imus(imu_data, target_rate_hz=100)  # 100 Hz target rate
-
-                            get_data_tranch(
-                                safe_get_imu_queue(imu_data, 'HEAD', manager.Queue()),  # imu1Queue
-                                safe_get_imu_queue(imu_data, 'PELVIS', manager.Queue()),  # imu2Queue
-                                safe_get_imu_queue(imu_data, 'LEFTFOOT', manager.Queue()),  # imu3Queue
-                                safe_get_imu_queue(imu_data, 'RIGHTFOOT', manager.Queue()),  # imu4Queue
-                                INTERVALS,  # Pass the counter variable
-                                exercise_code  # Pass the exercise code
-                            )
-
-                            scheduleQueue.get()  # Consume the scheduled task
-                            INTERVALS += 1
-                            print(f"Intervals = {INTERVALS}")
-
-                            if INTERVALS == 4:
-                                print("Processing the entire data stream...")
-                                get_data_tranch(
-                                    imu_data.get('HEAD', [None, None, manager.Queue()])[2],  # imu1FinalQueue
-                                    imu_data.get('PELVIS', [None, None, manager.Queue()])[2],  # imu2FinalQueue
-                                    imu_data.get('LEFTFOOT', [None, None, manager.Queue()])[2],  # imu3FinalQueue
-                                    imu_data.get('RIGHTFOOT', [None, None, manager.Queue()])[2],  # imu4FinalQueue
-                                    INTERVALS,
-                                    exercise_code
-                                )
-                                if final_metrics is not None:
-                                    metrics_queue.put(final_metrics)
-                                break;
-    elif exercise_code == 'exer_16':
-        while INTERVALS < 4 or not q.empty():
-            #if (q.empty()):
-            #    print('empty q')
-            data = q.get()  # Read data from the dataQueue
-            #print(data)
-
-            if ":" in data:  # Check for valid sensor data format
-                # Convert JSON data to SensorData object
-                sensor_data = SensorData.from_json(data)
-
-                # Use deviceMacAddress as the body part identifier
-                body_part = sensor_data.device_mac_address
-                #print(body_part)
-
-                if body_part in expected_body_parts:
-                    received_body_parts.add(body_part);
-                
-                if (received_body_parts == expected_body_parts):
-                    scheduleQueue.put('startcounting')
-                    # Fetch the relevant lists and queues from imu_data
-                    if body_part in imu_data:
-                        imu_list, imu_queue, imu_finalqueue = imu_data[body_part]
-
-                        # Add the sensor data to the appropriate structures
-                        imu_list.append(sensor_data)
-                        imu_queue.put(sensor_data)
-                        imu_finalqueue.put(sensor_data)
-                    else:
-                        print(f"Unrecognized body part: {body_part}")
-
-                    # Check if there is something in the schedule queue
-                    if not scheduleQueue.empty():
-                        message = scheduleQueue.get()  # Block until a message is received
-                        if message == "GO":
-                            # Call the data processing function based on the queues
-                            print('I am calling get_data_tranch')
-                            # interpolate
                             process_and_interpolate_imus(imu_data, target_rate_hz=100)  # 100 Hz target rate
 
                             metrics = get_data_tranch(
@@ -1407,6 +1454,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             print(f"Intervals = {INTERVALS}")
 
                             if INTERVALS == 4:
+                                send_voice_instructions("bph0083")
                                 print("Processing the entire data stream...")
                                 final_metrics = get_data_tranch(
                                     imu_data.get('HEAD', [None, None, manager.Queue()])[2],  # imu1FinalQueue
@@ -1419,12 +1467,9 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 if final_metrics is not None:
                                     metrics_queue.put(final_metrics)
                                 break;
-    elif exercise_code == 'exer_17':
+    elif exercise_code == 'exer_17': #Forward Walking Yaw
         while INTERVALS < 4 or not q.empty():
-            #if (q.empty()):
-            #    print('empty q')
             data = q.get()  # Read data from the dataQueue
-            #print(data)
 
             if ":" in data:  # Check for valid sensor data format
                 # Convert JSON data to SensorData object
@@ -1432,7 +1477,6 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
 
                 # Use deviceMacAddress as the body part identifier
                 body_part = sensor_data.device_mac_address
-                #print(body_part)
 
                 if body_part in expected_body_parts:
                     received_body_parts.add(body_part);
@@ -1456,7 +1500,6 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                         if message == "GO":
                             # Call the data processing function based on the queues
                             print('I am calling get_data_tranch')
-                            # interpolate
                             process_and_interpolate_imus(imu_data, target_rate_hz=100)  # 100 Hz target rate
 
                             metrics = get_data_tranch(
@@ -1473,6 +1516,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             print(f"Intervals = {INTERVALS}")
 
                             if INTERVALS == 4:
+                                send_voice_instructions("bph0083")
                                 print("Processing the entire data stream...")
                                 final_metrics = get_data_tranch(
                                     imu_data.get('HEAD', [None, None, manager.Queue()])[2],  # imu1FinalQueue
@@ -1485,12 +1529,9 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 if final_metrics is not None:
                                     metrics_queue.put(final_metrics)
                                 break;
-    elif exercise_code == 'exer_18':
+    elif exercise_code == 'exer_18': #Forward Walking Tilt
         while INTERVALS < 4 or not q.empty():
-            #if (q.empty()):
-            #    print('empty q')
             data = q.get()  # Read data from the dataQueue
-            #print(data)
 
             if ":" in data:  # Check for valid sensor data format
                 # Convert JSON data to SensorData object
@@ -1498,7 +1539,6 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
 
                 # Use deviceMacAddress as the body part identifier
                 body_part = sensor_data.device_mac_address
-                #print(body_part)
 
                 if body_part in expected_body_parts:
                     received_body_parts.add(body_part);
@@ -1522,7 +1562,6 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                         if message == "GO":
                             # Call the data processing function based on the queues
                             print('I am calling get_data_tranch')
-                            # interpolate
                             process_and_interpolate_imus(imu_data, target_rate_hz=100)  # 100 Hz target rate
 
                             metrics = get_data_tranch(
@@ -1539,6 +1578,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             print(f"Intervals = {INTERVALS}")
 
                             if INTERVALS == 4:
+                                send_voice_instructions("bph0083")
                                 print("Processing the entire data stream...")
                                 final_metrics = get_data_tranch(
                                     imu_data.get('HEAD', [None, None, manager.Queue()])[2],  # imu1FinalQueue
@@ -1551,12 +1591,9 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 if final_metrics is not None:
                                     metrics_queue.put(final_metrics)
                                 break;
-    elif exercise_code == 'exer_19':
+    elif exercise_code == 'exer_19':#Side Stepping
         while INTERVALS < 4 or not q.empty():
-            #if (q.empty()):
-            #    print('empty q')
             data = q.get()  # Read data from the dataQueue
-            #print(data)
 
             if ":" in data:  # Check for valid sensor data format
                 # Convert JSON data to SensorData object
@@ -1564,7 +1601,68 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
 
                 # Use deviceMacAddress as the body part identifier
                 body_part = sensor_data.device_mac_address
-                #print(body_part)
+
+                if body_part in expected_body_parts:
+                    received_body_parts.add(body_part);
+                
+                if (received_body_parts == expected_body_parts):
+                    scheduleQueue.put('startcounting')
+                    # Fetch the relevant lists and queues from imu_data
+                    if body_part in imu_data:
+                        imu_list, imu_queue, imu_finalqueue = imu_data[body_part]
+
+                        # Add the sensor data to the appropriate structures
+                        imu_list.append(sensor_data)
+                        imu_queue.put(sensor_data)
+                        imu_finalqueue.put(sensor_data)
+                    else:
+                        print(f"Unrecognized body part: {body_part}")
+
+                    # Check if there is something in the schedule queue
+                    if not scheduleQueue.empty():
+                        message = scheduleQueue.get()  # Block until a message is received
+                        if message == "GO":
+                            # Call the data processing function based on the queues
+                            print('I am calling get_data_tranch')
+                            process_and_interpolate_imus(imu_data, target_rate_hz=100)  # 100 Hz target rate
+
+                            metrics = get_data_tranch(
+                                safe_get_imu_queue(imu_data, 'HEAD', manager.Queue()),  # imu1Queue
+                                safe_get_imu_queue(imu_data, 'PELVIS', manager.Queue()),  # imu2Queue
+                                safe_get_imu_queue(imu_data, 'LEFTFOOT', manager.Queue()),  # imu3Queue
+                                safe_get_imu_queue(imu_data, 'RIGHTFOOT', manager.Queue()),  # imu4Queue
+                                INTERVALS,  # Pass the counter variable
+                                exercise_code  # Pass the exercise code
+                            )
+
+                            scheduleQueue.get()  # Consume the scheduled task
+                            INTERVALS += 1
+                            print(f"Intervals = {INTERVALS}")
+
+                            if INTERVALS == 4:
+                                send_voice_instructions("bph0083")
+                                print("Processing the entire data stream...")
+                                final_metrics = get_data_tranch(
+                                    imu_data.get('HEAD', [None, None, manager.Queue()])[2],  # imu1FinalQueue
+                                    imu_data.get('PELVIS', [None, None, manager.Queue()])[2],  # imu2FinalQueue
+                                    imu_data.get('LEFTFOOT', [None, None, manager.Queue()])[2],  # imu3FinalQueue
+                                    imu_data.get('RIGHTFOOT', [None, None, manager.Queue()])[2],  # imu4FinalQueue
+                                    INTERVALS,
+                                    exercise_code
+                                )
+                                if final_metrics is not None:
+                                    metrics_queue.put(final_metrics)
+                                break;
+    elif exercise_code == 'exer_20': #Walking Scanning
+        while INTERVALS < 4 or not q.empty():
+            data = q.get()  # Read data from the dataQueue
+
+            if ":" in data:  # Check for valid sensor data format
+                # Convert JSON data to SensorData object
+                sensor_data = SensorData.from_json(data)
+
+                # Use deviceMacAddress as the body part identifier
+                body_part = sensor_data.device_mac_address
 
                 if body_part in expected_body_parts:
                     received_body_parts.add(body_part);
@@ -1605,6 +1703,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             print(f"Intervals = {INTERVALS}")
 
                             if INTERVALS == 4:
+                                send_voice_instructions("bph0083")
                                 print("Processing the entire data stream...")
                                 get_data_tranch(
                                     imu_data.get('HEAD', [None, None, manager.Queue()])[2],  # imu1FinalQueue
@@ -1617,12 +1716,9 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 if final_metrics is not None:
                                     metrics_queue.put(final_metrics)
                                 break;
-    elif exercise_code == 'exer_20':
+    elif exercise_code == 'exer_21': #Hip External
         while INTERVALS < 4 or not q.empty():
-            #if (q.empty()):
-            #    print('empty q')
             data = q.get()  # Read data from the dataQueue
-            #print(data)
 
             if ":" in data:  # Check for valid sensor data format
                 # Convert JSON data to SensorData object
@@ -1630,7 +1726,6 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
 
                 # Use deviceMacAddress as the body part identifier
                 body_part = sensor_data.device_mac_address
-                #print(body_part)
 
                 if body_part in expected_body_parts:
                     received_body_parts.add(body_part);
@@ -1654,10 +1749,9 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                         if message == "GO":
                             # Call the data processing function based on the queues
                             print('I am calling get_data_tranch')
-                            # interpolate
                             process_and_interpolate_imus(imu_data, target_rate_hz=100)  # 100 Hz target rate
 
-                            get_data_tranch(
+                            metrics = get_data_tranch(
                                 safe_get_imu_queue(imu_data, 'HEAD', manager.Queue()),  # imu1Queue
                                 safe_get_imu_queue(imu_data, 'PELVIS', manager.Queue()),  # imu2Queue
                                 safe_get_imu_queue(imu_data, 'LEFTFOOT', manager.Queue()),  # imu3Queue
@@ -1671,8 +1765,9 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             print(f"Intervals = {INTERVALS}")
 
                             if INTERVALS == 4:
+                                send_voice_instructions("bph0083")
                                 print("Processing the entire data stream...")
-                                get_data_tranch(
+                                final_metrics = get_data_tranch(
                                     imu_data.get('HEAD', [None, None, manager.Queue()])[2],  # imu1FinalQueue
                                     imu_data.get('PELVIS', [None, None, manager.Queue()])[2],  # imu2FinalQueue
                                     imu_data.get('LEFTFOOT', [None, None, manager.Queue()])[2],  # imu3FinalQueue
@@ -1683,12 +1778,10 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 if final_metrics is not None:
                                     metrics_queue.put(final_metrics)
                                 break;
-    elif exercise_code == 'exer_21':
+    elif exercise_code == 'exer_22':#Lateral Trunk Flexion
+
         while INTERVALS < 4 or not q.empty():
-            #if (q.empty()):
-            #    print('empty q')
             data = q.get()  # Read data from the dataQueue
-            #print(data)
 
             if ":" in data:  # Check for valid sensor data format
                 # Convert JSON data to SensorData object
@@ -1696,7 +1789,6 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
 
                 # Use deviceMacAddress as the body part identifier
                 body_part = sensor_data.device_mac_address
-                #print(body_part)
 
                 if body_part in expected_body_parts:
                     received_body_parts.add(body_part);
@@ -1720,10 +1812,9 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                         if message == "GO":
                             # Call the data processing function based on the queues
                             print('I am calling get_data_tranch')
-                            # interpolate
                             process_and_interpolate_imus(imu_data, target_rate_hz=100)  # 100 Hz target rate
 
-                            get_data_tranch(
+                            metrics = get_data_tranch(
                                 safe_get_imu_queue(imu_data, 'HEAD', manager.Queue()),  # imu1Queue
                                 safe_get_imu_queue(imu_data, 'PELVIS', manager.Queue()),  # imu2Queue
                                 safe_get_imu_queue(imu_data, 'LEFTFOOT', manager.Queue()),  # imu3Queue
@@ -1737,8 +1828,9 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             print(f"Intervals = {INTERVALS}")
 
                             if INTERVALS == 4:
+                                send_voice_instructions("bph0083")
                                 print("Processing the entire data stream...")
-                                get_data_tranch(
+                                final_metrics = get_data_tranch(
                                     imu_data.get('HEAD', [None, None, manager.Queue()])[2],  # imu1FinalQueue
                                     imu_data.get('PELVIS', [None, None, manager.Queue()])[2],  # imu2FinalQueue
                                     imu_data.get('LEFTFOOT', [None, None, manager.Queue()])[2],  # imu3FinalQueue
@@ -1749,80 +1841,10 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 if final_metrics is not None:
                                     metrics_queue.put(final_metrics)
                                 break;
-    elif exercise_code == 'exer_22':
-
-        while INTERVALS < 4 or not q.empty():
-            #if (q.empty()):
-            #    print('empty q')
-            data = q.get()  # Read data from the dataQueue
-            #print(data)
-
-            if ":" in data:  # Check for valid sensor data format
-                # Convert JSON data to SensorData object
-                sensor_data = SensorData.from_json(data)
-
-                # Use deviceMacAddress as the body part identifier
-                body_part = sensor_data.device_mac_address
-                #print(body_part)
-
-                if body_part in expected_body_parts:
-                    received_body_parts.add(body_part);
-                
-                if (received_body_parts == expected_body_parts):
-                    scheduleQueue.put('startcounting')
-                    # Fetch the relevant lists and queues from imu_data
-                    if body_part in imu_data:
-                        imu_list, imu_queue, imu_finalqueue = imu_data[body_part]
-
-                        # Add the sensor data to the appropriate structures
-                        imu_list.append(sensor_data)
-                        imu_queue.put(sensor_data)
-                        imu_finalqueue.put(sensor_data)
-                    else:
-                        print(f"Unrecognized body part: {body_part}")
-
-                    # Check if there is something in the schedule queue
-                    if not scheduleQueue.empty():
-                        message = scheduleQueue.get()  # Block until a message is received
-                        if message == "GO":
-                            # Call the data processing function based on the queues
-                            print('I am calling get_data_tranch')
-                            # interpolate
-                            process_and_interpolate_imus(imu_data, target_rate_hz=100)  # 100 Hz target rate
-
-                            get_data_tranch(
-                                safe_get_imu_queue(imu_data, 'HEAD', manager.Queue()),  # imu1Queue
-                                safe_get_imu_queue(imu_data, 'PELVIS', manager.Queue()),  # imu2Queue
-                                safe_get_imu_queue(imu_data, 'LEFTFOOT', manager.Queue()),  # imu3Queue
-                                safe_get_imu_queue(imu_data, 'RIGHTFOOT', manager.Queue()),  # imu4Queue
-                                INTERVALS,  # Pass the counter variable
-                                exercise_code  # Pass the exercise code
-                            )
-
-                            scheduleQueue.get()  # Consume the scheduled task
-                            INTERVALS += 1
-                            print(f"Intervals = {INTERVALS}")
-
-                            if INTERVALS == 4:
-                                print("Processing the entire data stream...")
-                                get_data_tranch(
-                                    imu_data.get('HEAD', [None, None, manager.Queue()])[2],  # imu1FinalQueue
-                                    imu_data.get('PELVIS', [None, None, manager.Queue()])[2],  # imu2FinalQueue
-                                    imu_data.get('LEFTFOOT', [None, None, manager.Queue()])[2],  # imu3FinalQueue
-                                    imu_data.get('RIGHTFOOT', [None, None, manager.Queue()])[2],  # imu4FinalQueue
-                                    INTERVALS,
-                                    exercise_code
-                                )
-                                if final_metrics is not None:
-                                    metrics_queue.put(final_metrics)
-                                break;
-    elif exercise_code == 'exer_23':
+    elif exercise_code == 'exer_23': #Calf Stretch
         
         while INTERVALS < 4 or not q.empty():
-            #if (q.empty()):
-            #    print('empty q')
             data = q.get()  # Read data from the dataQueue
-            #print(data)
 
             if ":" in data:  # Check for valid sensor data format
                 # Convert JSON data to SensorData object
@@ -1830,7 +1852,6 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
 
                 # Use deviceMacAddress as the body part identifier
                 body_part = sensor_data.device_mac_address
-                #print(body_part)
 
                 if body_part in expected_body_parts:
                     received_body_parts.add(body_part);
@@ -1854,10 +1875,9 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                         if message == "GO":
                             # Call the data processing function based on the queues
                             print('I am calling get_data_tranch')
-                            # interpolate
                             process_and_interpolate_imus(imu_data, target_rate_hz=100)  # 100 Hz target rate
 
-                            get_data_tranch(
+                            metrics = get_data_tranch(
                                 safe_get_imu_queue(imu_data, 'HEAD', manager.Queue()),  # imu1Queue
                                 safe_get_imu_queue(imu_data, 'PELVIS', manager.Queue()),  # imu2Queue
                                 safe_get_imu_queue(imu_data, 'LEFTFOOT', manager.Queue()),  # imu3Queue
@@ -1871,8 +1891,9 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             print(f"Intervals = {INTERVALS}")
 
                             if INTERVALS == 4:
+                                send_voice_instructions("bph0083")
                                 print("Processing the entire data stream...")
-                                get_data_tranch(
+                                final_metrics = get_data_tranch(
                                     imu_data.get('HEAD', [None, None, manager.Queue()])[2],  # imu1FinalQueue
                                     imu_data.get('PELVIS', [None, None, manager.Queue()])[2],  # imu2FinalQueue
                                     imu_data.get('LEFTFOOT', [None, None, manager.Queue()])[2],  # imu3FinalQueue

@@ -9,7 +9,7 @@ import time
 import requests
 import configparser
 from datetime import datetime
-from mqtt_messages import init_mqtt_client, set_language, start_exercise_demo, send_voice_instructions,send_message_with_speech_to_text,send_message_with_speech_to_text_2
+from mqtt_messages import init_mqtt_client, set_language, start_exercise_demo, send_voice_instructions,send_message_with_speech_to_text,send_message_with_speech_to_text_2,send_exit
 from data_management_v05 import scheduler, receive_imu_data
 from api_management import login, get_device_api_key
 from configure_file_management import read_configure_file
@@ -22,7 +22,13 @@ from shared_variables import (
 from UDPSERVER import start_multicast_server
 from UDPClient import SendMyIP
 from websocketServer import run_websocket_server
+from pathlib import Path
 
+# Get the directory where the script is located
+BASE_DIR = Path(__file__).resolve().parent
+
+# Construct the paths for config and logo
+CONFIG_PATH = BASE_DIR / 'config.ini'
 TOPIC_PING = "healthcheck/AREYOUALIVE"
 TOPIC_PONG = "healthcheck/IAMALIVE"
 
@@ -71,7 +77,7 @@ DATA_ENDPOINT = f"{FILE_STORAGE_BASE_URL}/Data"
 def get_api_key():
     """Fetch API key from config file."""
     config = configparser.ConfigParser()
-    config.read('config.ini')
+    config.read(CONFIG_PATH)
     return config['API'].get('key_edge', '')
 
 def convert_log_to_txt(log_file):
@@ -159,10 +165,11 @@ class StreamToLogger:
 
 sys.stdout = StreamToLogger(logger.info)
 sys.stderr = StreamToLogger(logger.error)
+
 def get_devices():
     """Fetch the daily schedule from the API."""
     config = configparser.ConfigParser()
-    config.read('config.ini')
+    config.read(CONFIG_PATH)
     api_key_edge = config['API'].get('key_edge', '')
     
     url = 'http://telerehab-develop.biomed.ntua.gr/api/PatientDeviceSet'
@@ -180,7 +187,7 @@ def get_devices():
 def get_daily_schedule():
     """Fetch the daily schedule from the API."""
     config = configparser.ConfigParser()
-    config.read('config.ini')
+    config.read(CONFIG_PATH)
     api_key_edge = config['API'].get('key_edge', '')
     
     url = 'http://telerehab-develop.biomed.ntua.gr/api/PatientSchedule/daily'
@@ -198,7 +205,7 @@ def get_daily_schedule():
 def post_results(score, exercise_id):
     """Fetch the daily schedule from the API."""
     config = configparser.ConfigParser()
-    config.read('config.ini')
+    config.read(CONFIG_PATH)
     api_key_edge = config['API'].get('key_edge', '')
     """Post metrics to the PerformanceScore API."""
     try:
@@ -229,11 +236,11 @@ def runScenario(queueData):
     init_mqtt_client()
 
     logging.basicConfig(level=logging.INFO)
-    test_log_file = "/home/uoi/Documents/GitHub/Telerehab_UOI/WP3_v1/imu_mqtt/2024-12-13/app.log"  # Existing log file to test the upload
-    if os.path.exists(test_log_file):
-        upload_file(test_log_file, "Logs")
-    else:
-        logging.error(f"Test log file {test_log_file} not found.")
+    # test_log_file = "/home/uoi/Documents/GitHub/Telerehab_UOI/WP3_v1/imu_mqtt/2024-12-13/app.log"  # Existing log file to test the upload
+    # if os.path.exists(test_log_file):
+    #     upload_file(test_log_file, "Logs")
+    # else:
+    #     logging.error(f"Test log file {test_log_file} not found.")
     
     client.publish('STARTVC', 'STARTVC')
     time.sleep(4)
@@ -275,8 +282,7 @@ def runScenario(queueData):
             print("Get list",exercises)
             if not exercises:
                 logger.info("No exercises found. Exiting.")
-                break
-                                         
+                break                    
 
             # Process each exercise in the schedule
             for exercise in exercises:
@@ -361,8 +367,6 @@ def runScenario(queueData):
 
                 imu_process.start()
 
-
-
                 # Wait for the IMU process to finish
                 imu_process.join()
 
@@ -432,10 +436,14 @@ def runScenario(queueData):
 
                     if response == "no":
                         print("User chose to stop. Exiting scenario.")
-                        #Waiting for message HERE!!!!!!!!!!!!!!!!!!
+                        send_voice_instructions("bph0223")
+                        send_voice_instructions("bph0108")
+                        client.publish('EXIT','EXIT')
+                        send_exit()
                         return
                     elif response == "yes":
                         print("User chose to continue. Proceeding with next exercise.")
+                        send_voice_instructions("bph0045")
                         continue
                 else:
                     #Ask for specific symptoms one after another!!!
@@ -478,15 +486,17 @@ def runScenario(queueData):
                         except Exception as e:
                             logger.error(f"Failed to send voice instruction or get response for Exercise ID {exercise['exerciseId']}: {e}")
                             return
-                    ###Here a message for it is better to interrupt for now!!!
+                    send_voice_instructions("bph0223")
                     break;
             
             # Fetch updated schedule after processing current exercises
             exercises = get_daily_schedule()
             ###If there are no exercises then end the 
             if not exercises :
-                response = send_voice_instructions("bph0108")
+                send_voice_instructions("bph0222")
+                send_voice_instructions("bph0108")
                 client.publish('EXIT','EXIT')
+                send_exit()
                 break;
 
     except requests.exceptions.RequestException as e:
