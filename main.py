@@ -436,7 +436,7 @@ def runScenario(queueData):
 
                     if response == "no":
                         print("User chose to stop. Exiting scenario.")
-                        send_voice_instructions("bph0223")
+                        send_voice_instructions("bph0222")
                         send_voice_instructions("bph0108")
                         client.publish('EXIT','EXIT')
                         send_exit()
@@ -486,6 +486,7 @@ def runScenario(queueData):
                         except Exception as e:
                             logger.error(f"Failed to send voice instruction or get response for Exercise ID {exercise['exerciseId']}: {e}")
                             return
+                    send_voice_instructions("bph0222")
                     send_voice_instructions("bph0223")
                     break;
             
