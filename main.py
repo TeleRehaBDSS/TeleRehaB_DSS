@@ -407,6 +407,7 @@ def runScenario(queueData):
                 else:
                     try:
                         metrics = {"metrics": ["ERROR IN METRICS", "ERROR IN METRICS", "ERROR IN METRICS"]}
+                        post_results(json.dumps(metrics), exercise['exerciseId'])
                     except json.JSONDecodeError:
                         print("Metrics_2 could not be parsed as JSON.")
                         return
@@ -415,90 +416,36 @@ def runScenario(queueData):
 
                 # Mark the exercise as completed
                 print(f"Exercise {exercise['exerciseName']} completed.")
-                
-                #Ask the patient if feels any symptoms
+                time.sleep(10)
+
+                # Fetch updated schedule after processing current exercises
+                exercises = get_daily_schedule()
+                ###If there are no exercises then end the 
+                if not exercises :
+                    send_voice_instructions("bph0222")
+                    send_voice_instructions("bph0108")
+                    client.publish('EXIT','EXIT')
+                    send_exit()
+                    break;
                 try:
-                # Combine sending voice instruction and waiting for response
-                    symptomps_response = send_message_with_speech_to_text("bph0101")
+                    time.sleep(2)
+                    response = send_message_with_speech_to_text("bph0088")
                 except Exception as e:
                     logger.error(f"Failed to send voice instruction or get response for Exercise ID {exercise['exerciseId']}: {e}")
                     return
-                
-                #If the answer is no ask the patient to move in another exercise
-                if symptomps_response == "no":
-                    # Ask if wanna to move to another exercise
-                    try:
-                        time.sleep(2)
-                        response = send_message_with_speech_to_text("bph0088")
-                    except Exception as e:
-                        logger.error(f"Failed to send voice instruction or get response for Exercise ID {exercise['exerciseId']}: {e}")
-                        return
 
-                    if response == "no":
-                        print("User chose to stop. Exiting scenario.")
-                        send_voice_instructions("bph0222")
-                        send_voice_instructions("bph0108")
-                        client.publish('EXIT','EXIT')
-                        send_exit()
-                        return
-                    elif response == "yes":
-                        print("User chose to continue. Proceeding with next exercise.")
-                        send_voice_instructions("bph0045")
-                        continue
-                else:
-                    #Ask for specific symptoms one after another!!!
-                    #Headache
-                    try:
-                    # Combine sending oral instruction and waiting for response
-                        headache_response = send_message_with_speech_to_text("bph0077")
-                    except Exception as e:
-                        logger.error(f"Failed to send voice instruction or get response for Exercise ID {exercise['exerciseId']}: {e}")
-                        return
-                    if headache_response == "yes":
-                        try:
-                            rate_headache = send_message_with_speech_to_text_2("bph0110")
-                        except Exception as e:
-                            logger.error(f"Failed to send voice instruction or get response for Exercise ID {exercise['exerciseId']}: {e}")
-                            return
-                    #Disorientated
-                    try:
-                    # Combine sending voice instruction and waiting for response
-                        disorientated_response = send_message_with_speech_to_text("bph0087")
-                    except Exception as e:
-                        logger.error(f"Failed to send voice instruction or get response for Exercise ID {exercise['exerciseId']}: {e}")
-                        return
-                    if disorientated_response == "yes":
-                        try:
-                            rate_disorientated = send_message_with_speech_to_text_2("bph0110")
-                        except Exception as e:
-                            logger.error(f"Failed to send voice instruction or get response for Exercise ID {exercise['exerciseId']}: {e}")
-                            return
-                    #Blurry Vision
-                    try:
-                    # Combine sending voice instruction and waiting for response
-                        blurry_vision_response = send_message_with_speech_to_text("bph0089")
-                    except Exception as e:
-                        logger.error(f"Failed to send voice instruction or get response for Exercise ID {exercise['exerciseId']}: {e}")
-                        return
-                    if blurry_vision_response == "yes":
-                        try:
-                            rate_blurry_vision = send_message_with_speech_to_text_2("bph0110")
-                        except Exception as e:
-                            logger.error(f"Failed to send voice instruction or get response for Exercise ID {exercise['exerciseId']}: {e}")
-                            return
+                if response == "no":
+                    print("User chose to stop. Exiting scenario.")
                     send_voice_instructions("bph0222")
-                    send_voice_instructions("bph0223")
-                    break;
+                    send_voice_instructions("bph0108")
+                    client.publish('EXIT','EXIT')
+                    send_exit()
+                    return
+                elif response == "yes":
+                    print("User chose to continue. Proceeding with next exercise.")
+                    send_voice_instructions("bph0045")
+                    continue
             
-            # Fetch updated schedule after processing current exercises
-            exercises = get_daily_schedule()
-            ###If there are no exercises then end the 
-            if not exercises :
-                send_voice_instructions("bph0222")
-                send_voice_instructions("bph0108")
-                client.publish('EXIT','EXIT')
-                send_exit()
-                break;
 
     except requests.exceptions.RequestException as e:
         logger.error(f"Error: {e}")

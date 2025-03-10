@@ -10,7 +10,6 @@ from scipy.signal import argrelextrema
 from scipy.spatial.transform import Rotation as R
 from scipy.signal import butter, filtfilt
 import json
-from scipy.signal import savgol_filter
 from scipy.ndimage import gaussian_filter1d
 from scipy.signal import correlate
 
@@ -275,73 +274,79 @@ def getMetricsStandingNew01(Limu2, Limu3, Limu4, plotdiagrams):
     df_Limu3 = df_Limu3[(df_Limu3['Timestamp'] >= start_time) & (df_Limu3['Timestamp'] <= end_time)].reset_index(drop=True)
     df_Limu4 = df_Limu4[(df_Limu4['Timestamp'] >= start_time) & (df_Limu4['Timestamp'] <= end_time)].reset_index(drop=True)
 
+    # Compute first differential (velocity) for movement detection
+    df_Limu3['w_diff'] = df_Limu3['W(number)'].diff().dropna()
+    df_Limu4['w_diff'] = df_Limu4['W(number)'].diff().dropna()
+
+    # Apply Gaussian smoothing for noise reduction
+    sigma = 2  # Smoothing factor
+    df_Limu3['w_smooth'] = gaussian_filter1d(df_Limu3['w_diff'].fillna(0), sigma=sigma)
+    df_Limu4['w_smooth'] = gaussian_filter1d(df_Limu4['w_diff'].fillna(0), sigma=sigma)
+
+
     # Preprocess each foot’s data
-    # Analyze movements
-    def analyze_movements(data_y, timestamps, timestamps_list, durations_list, sampling_rate, detect_peaks=True):
-        """
-        Analyze movements and calculate metrics for a signal.
+    # Adaptive peak detection for movement identification
+    def detect_refined_peaks(signal):
+        """Detects movement peaks with adaptive thresholds."""
+        max_amp = np.max(np.abs(signal))
+        std_dev = np.std(signal)
+        height_threshold = max_amp * 0.2
+        prominence_threshold = std_dev * 0.4
+        min_distance = int(len(signal) / 12)
+        peaks, _ = find_peaks(signal, height=height_threshold, prominence=prominence_threshold, distance=min_distance)
+        return peaks
+    
+    # Detect movements
+    left_movements = detect_refined_peaks(df_Limu3['w_smooth'])
+    right_movements = detect_refined_peaks(df_Limu4['w_smooth'])
 
-        Parameters:
-        - data_y: The signal to analyze.
-        - timestamps: Timestamps corresponding to the signal.
-        - timestamps_list: List to append detected timestamps.
-        - durations_list: List to append movement durations.
-        - sampling_rate: Sampling rate of the signal in Hz.
+    # Convert indices to timestamps
+    left_timestamps = df_Limu3['Timestamp'].iloc[left_movements].tolist()
+    right_timestamps = df_Limu4['Timestamp'].iloc[right_movements].tolist()
 
-        Returns:
-        - mean_off_ground_time: Mean duration of detected movements.
-        """
-        # Adaptive smoothing and baseline correction
-        y_smoothed = adaptive_smooth(data_y)
-        y_corrected = baseline_correction(pd.Series(y_smoothed))
+    # Compute movement durations (right to next left & left to next right)
+    left_durations = []
+    right_durations = []
 
-        distanceaut = calculate_autocorrelation_distance(data_y, sampling_rate, detect_peaks=detect_peaks)
+    for rt in right_timestamps:
+        next_left = next((lt for lt in left_timestamps if lt > rt), None)
+        if next_left:
+            right_durations.append((next_left - rt).total_seconds())
 
-        # Detect peaks or valleys based on the input flag
-        if detect_peaks:
-            detected_indices = detect_major_valleys(-y_corrected, sampling_rate, detect_peaks, distanceaut)
-        else:
-            detected_indices = detect_major_valleys(y_corrected, sampling_rate, detect_peaks, distanceaut)
+    for lt in left_timestamps:
+        next_right = next((rt for rt in right_timestamps if rt > lt), None)
+        if next_right:
+            left_durations.append((next_right - lt).total_seconds())
 
-        # Retrieve actual timestamps corresponding to the detected indices
-        detected_timestamps = timestamps.iloc[detected_indices]
+    # Compute updated metrics separately for left and right foot
+    num_left_movements = len(left_durations)
+    num_right_movements = len(right_durations)
 
-        # Calculate off-ground durations using datetime subtraction
-        off_ground_durations = [(detected_timestamps.iloc[i] - detected_timestamps.iloc[i - 1]).total_seconds() 
-                                for i in range(1, len(detected_timestamps))]
+    total_time = (end_time - start_time).total_seconds()
+    
+    pace_left = num_left_movements / total_time if total_time > 0 else 0
+    pace_right = num_right_movements / total_time if total_time > 0 else 0
 
-        # Append to the persistent lists
-        timestamps_list.extend(detected_timestamps.tolist())
-        durations_list.extend(off_ground_durations)
+    mean_duration_left = np.mean(left_durations) if left_durations else 0
+    std_duration_left = np.std(left_durations) if left_durations else 0
 
-        # Calculate mean off-ground time
-        mean_off_ground_time = np.mean(durations_list) if durations_list else 0
-        return mean_off_ground_time
-
-    # Analyze left foot (Limu3) and right foot (Limu4)
-    mean_left_off_ground_time = analyze_movements(
-        df_Limu3['Y (number)'], df_Limu3['Timestamp'], left_timestamps, left_durations, 100, detect_peaks=False)
-    mean_right_off_ground_time = analyze_movements(
-        df_Limu4['Y (number)'], df_Limu4['Timestamp'], right_timestamps, right_durations, 100, detect_peaks=False)
+    mean_duration_right = np.mean(right_durations) if right_durations else 0
+    std_duration_right = np.std(right_durations) if right_durations else 0
 
     # Calculate metrics separately for each foot
     metrics_data = {
         "total_metrics": {
             "LEFT LEG": {
-                "number_of_movements": len(left_durations),
-                "pace_movements_per_second": len(left_durations) / (end_time - start_time).total_seconds(),
-                "mean_range_degrees": np.mean(left_durations),
-                "std_range_degrees": np.std(left_durations),
-                "mean_duration_seconds": mean_left_off_ground_time,
-                "std_duration_seconds": np.std(left_durations)
+                "number_of_movements": num_left_movements,
+                "pace_movements_per_second": pace_left,
+                "mean_duration_seconds": mean_duration_left,
+                "std_duration_seconds": std_duration_left
             },
             "RIGHT LEG": {
-                "number_of_movements": len(right_durations),
-                "pace_movements_per_second": len(right_durations) / (end_time - start_time).total_seconds(),
-                "mean_range_degrees": np.mean(right_durations),
-                "std_range_degrees": np.std(right_durations),
-                "mean_duration_seconds": mean_right_off_ground_time,
-                "std_duration_seconds": np.std(right_durations)
+                "number_of_movements": num_right_movements,
+                "pace_movements_per_second": pace_right,
+                "mean_duration_seconds": mean_duration_right,
+                "std_duration_seconds": std_duration_right
             }
         }
     }
