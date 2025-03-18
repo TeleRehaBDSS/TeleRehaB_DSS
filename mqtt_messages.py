@@ -27,12 +27,13 @@ iamalive_queue = mp.Queue()
 
 # Reset all global flags and responses
 def reset_global_flags():
-    global ack_received, demo_start_received, demo_end_received, finish_received, finish_response
+    global ack_received, demo_start_received, demo_end_received, finish_received, finish_response,ctg_received
     ack_received = False
     demo_start_received = False
     demo_end_received = False
     finish_received = False
     finish_response = None
+    ctg_received = None
 
 # MQTT Callbacks
 def on_connect(client, userdata, flags, rc):
@@ -41,7 +42,7 @@ def on_connect(client, userdata, flags, rc):
 
 
 def on_message(client, userdata, msg):
-    global ack_received, demo_start_received, demo_end_received, finish_received,finish_response
+    global ack_received, demo_start_received, demo_end_received, finish_received,finish_response,ctg_received
     reset_global_flags()
 
     try:
@@ -69,6 +70,8 @@ def on_message(client, userdata, msg):
             demo_end_received = True
         elif payload.get("action") == "FINISH":
             finish_received = True
+        elif payload.get("action") == "CTG_END":
+            ctg_received = True
     elif msg.topic == MSG_TOPIC:
         if payload.get("action") == "ACK":
             ack_received = True
@@ -82,10 +85,10 @@ def on_message(client, userdata, msg):
 
 # Publish and Wait
 def publish_and_wait(topic, message, timeout=1000, wait_for="ACK"):
-    global ack_received, demo_start_received, demo_end_received, finish_received
+    global ack_received, demo_start_received, demo_end_received, finish_received, ctg_received
     reset_global_flags()
 
-    ack_received = demo_start_received = demo_end_received = finish_received = False
+    ack_received = demo_start_received = demo_end_received = finish_received = ctg_received =  False 
     client.publish(topic, json.dumps(message))
     print(f"Published: {message} to {topic}")
 
@@ -98,6 +101,8 @@ def publish_and_wait(topic, message, timeout=1000, wait_for="ACK"):
         if wait_for == "DEMO_END" and demo_end_received:
             return True
         if wait_for == "FINISH" and finish_received:
+            return True
+        if wait_for == "CTG_END" and ctg_received:
             return True
         time.sleep(0.5)
     print(f"Timeout waiting for {wait_for} on message: {message}")
@@ -203,14 +208,97 @@ def start_exercise_demo(exercise):
         "message": "",
         "language":"/"
     }
-    # while not publish_and_wait(DEMO_TOPIC, demo_message, wait_for="ACK"):
-    #     print("Retrying START message...")
-    # while not publish_and_wait(DEMO_TOPIC, demo_message, wait_for="DEMO_START"):
-    #     print("Retrying DEMO_START...")
+
     while not publish_and_wait(DEMO_TOPIC, demo_message, wait_for="DEMO_END"):
         print("Waiting for DEMO_END...")
     print(f"Exercise demonstration for {exercise_name} completed.")
 
+
+def start_exergames(exercise):
+    reset_global_flags()
+
+    if exercise['exerciseId'] == 28:
+        exercise_name = "holobalance_exergame_s2_sitting_1"
+        msg= "0"
+    elif exercise['exerciseId'] == 29:
+        exercise_name = "holobalance_exergame_s2_sitting_2"
+        msg= "0"
+    elif exercise['exerciseId'] == 30:
+        exercise_name = "holobalance_exergame_s2_standing_1"
+        msg= "0"
+    elif exercise['exerciseId'] == 31:
+        exercise_name = "holobalance_exergame_s2_standing_2"
+        msg= "0"
+    elif exercise['exerciseId'] == 32:
+        exercise_name = "holobalance_exergame_s2_standing_3"
+        msg= "1"
+    elif exercise['exerciseId'] == 33:
+        exercise_name = "holobalance_exergame_s2_walking_1"
+        msg= "0"
+    elif exercise['exerciseId'] == 34:
+        exercise_name = "holobalance_exergame_s2_walking_2"
+        msg= "0"
+    elif exercise['exerciseId'] == 35:
+        exercise_name = "holobalance_exergame_s2_walking_3"
+        msg= "1"
+    elif exercise['exerciseId'] == 36:
+        exercise_name = "holobalance_exergame_s2_walking_4"
+        msg= "2"
+
+    exergame_message = {
+        "action": "START_CTG",
+        "exercise": exercise_name,
+        "timestamp": datetime.now().isoformat(),
+        "code" : "",
+        "message": msg,
+        "language":"/"
+    }
+
+
+    while not publish_and_wait(DEMO_TOPIC, exergame_message, wait_for="CTG_END"):
+        print("Waiting for CTG_END...")
+    print(f"Exercise demonstration for {exercise_name} completed.")
+
+
+
+
+
+def start_cognitive_games(exercise):
+    reset_global_flags()
+
+    if exercise['exerciseId'] == 37:
+        exercise_name = "holobalance_cognitive_s3_memory"
+        msg= f"{exercise['progression']}"
+    elif exercise['exerciseId'] == 38:
+        exercise_name = "holobalance_cognitive_s3_catching_food"
+        msg= msg= f"{exercise['progression']}"
+    elif exercise['exerciseId'] == 39:
+        exercise_name = "holobalance_cognitive_s3_remember_previous"
+        msg= f"{exercise['progression']}"
+    elif exercise['exerciseId'] == 40:
+        exercise_name = "holobalance_cognitive_s3_bridge_crossing"
+        msg= f"{exercise['progression']}"
+    elif exercise['exerciseId'] == 41:
+        exercise_name = "holobalance_cognitive_s3_animal_feeding"
+        msg= f"{exercise['progression']}"
+    elif exercise['exerciseId'] == 42:
+        exercise_name = "holobalance_cognitive_s3_preparing_animal_food"
+        msg= f"{exercise['progression']}"
+    
+
+    cognitive_message = {
+        "action": "START_CTG",
+        "exercise": exercise_name,
+        "timestamp": datetime.now().isoformat(),
+        "code" : "",
+        "message": msg,
+        "language":"/"
+    }
+
+
+    while not publish_and_wait(DEMO_TOPIC, cognitive_message, wait_for="CTG_END"):
+        print("Waiting for CTG_END...")
+    print(f"Exercise demonstration for {exercise_name} completed.")
 
 # Function for Sending Oral Instructions
 def send_voice_instructions(code):

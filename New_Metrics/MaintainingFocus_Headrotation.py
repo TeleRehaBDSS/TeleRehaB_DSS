@@ -224,6 +224,9 @@ def getMetricsSittingOld01(Limu1,Limu2,Limu3,Limu4, plotdiagrams):
         plt.savefig('quaternion_components_plot!!!!!!!.png')
         #plt.show()
     
+    timestamps = pd.to_numeric(df_Limu1.index) / 1e3  # Convert to seconds
+    timestamps = pd.Series(timestamps)
+
     quaternions = df_Limu1[['X(number)', 'Y(number)', 'Z(number)', 'W(number)']].to_numpy()
     rotations = R.from_quat(quaternions)
     euler_angles = rotations.as_euler('xyz', degrees=False)
@@ -283,8 +286,7 @@ def getMetricsSittingOld01(Limu1,Limu2,Limu3,Limu4, plotdiagrams):
 
 
 
-    # print("peaks ", peaks)
-    # print("valleys ", valleys)
+
     if(len(peaks) == 0):
         return 0
     if(len(valleys) == 0):
@@ -359,13 +361,19 @@ def getMetricsSittingOld01(Limu1,Limu2,Limu3,Limu4, plotdiagrams):
         mean_duration = -1
         std_duration = -1        
 
+    interval_movements = 0
 
-    # # Output the metrics
-    # print(f"Number of movements: {len(filtered_pairs)}")
-    # print(f"Pace: {pace:.2f} movements per second")
-    # print(f"Mean Movement Range: {mean_range:.2f} degrees, STD: {std_range:.2f}")
-    # print(f"Mean Movement Duration: {mean_duration:.2f} seconds, STD: {std_duration:.2f}")
+    # Get the start and end time of the current interval
+    interval_start = df_Limu1.index[0]
+    interval_end = df_Limu1.index[-1]
 
+    # Count movements within the current interval
+    for pair in significant_movements:
+        movement_time = df_Limu1.iloc[pair[0]].name  # Time of the valley (start of movement)
+        if interval_start <= movement_time <= interval_end:
+            interval_movements += 1
+
+    exercise_duration = timestamps.iloc[-1] - timestamps.iloc[0]
 
     metrics_data = {
         "total_metrics": {
@@ -374,7 +382,8 @@ def getMetricsSittingOld01(Limu1,Limu2,Limu3,Limu4, plotdiagrams):
             "mean_range_degrees": float(mean_range),
             "std_range_degrees": float(std_range),
             "mean_duration_seconds": float(mean_duration),
-            "std_duration_seconds": float(std_duration)
+            "std_duration_seconds": float(std_duration),
+            "Exercise duration (seconds)" : exercise_duration
         }
     }
 

@@ -236,7 +236,6 @@ def getMetricsSeatingOld03(Limu1, Limu2, plotdiagrams):
     df_Limu2 = df_Limu2.sort_values(by='elapsed(time)')
     df_Limu2.set_index('elapsed(time)', inplace=True)
 
-
     quaternions1 = df_Limu1[['X(number)', 'Y (number)', 'Z (number)', 'W(number)']].to_numpy()
     rotations1 = R.from_quat(quaternions1)
     euler_angles1 = rotations1.as_euler('xyz', degrees=False)
