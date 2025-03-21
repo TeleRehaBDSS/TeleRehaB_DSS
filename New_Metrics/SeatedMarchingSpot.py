@@ -316,7 +316,7 @@ def getMetricsSittingNew04(Limu0, Limu1, Limu2, plotdiagrams):
                 "pace_movements_per_second": total_left_movements / (len(left_foot_z) * time_interval),
                 "mean_combined_range_degrees": total_left_range,
                 "mean_duration_seconds": total_left_duration / total_left_movements if total_left_movements > 0 else 0,
-                "Exercise_duration": len(left_foot_z) * time_interval,
+                "exercise_duration_seconds": len(left_foot_z) * time_interval,
                 "movement_duration": total_left_duration,
             },
             "RIGHT LEG": {
@@ -324,7 +324,7 @@ def getMetricsSittingNew04(Limu0, Limu1, Limu2, plotdiagrams):
                 "pace_movements_per_second": total_right_movements / (len(right_foot_z) * time_interval),
                 "mean_combined_range_degrees": total_right_range,
                 "mean_duration_seconds": total_right_duration / total_right_movements if total_right_movements > 0 else 0,
-                "Exercise_duration": len(right_foot_z) * time_interval,
+                "exercise_duration_seconds": len(right_foot_z) * time_interval,
                 "movement_duration": total_right_duration,
             }
         }

@@ -1115,7 +1115,7 @@ def getMetricsSittingNew01(Limu1, Limu2, plotdiagrams=False):
             "std_duration_seconds": np.std(durations),
             "mean_stand_time_seconds": np.mean(stand_durations),
             "std_stand_time_seconds": np.std(stand_durations),
-            "Exercise duration (seconds)": exercise_duration
+            "exercise_duration_seconds": exercise_duration
         }
         }
     else:

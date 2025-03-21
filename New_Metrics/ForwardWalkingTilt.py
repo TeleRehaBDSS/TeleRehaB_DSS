@@ -900,7 +900,7 @@ def getMetricsGaitNew02(Limu1,Limu2, Limu3, Limu4, plotdiagrams):
     # Combine peaks and minima, and sort them
     all_extrema = sorted(peaks1.tolist() + minima1.tolist())
     df_Limu2['first_differential'] = df_Limu2['smoothed_signal'].diff()
-
+    total_duration_seconds = (df_Limu1.index[-1] - df_Limu1.index[0]).total_seconds()
      # Initialize storage for aggregated metrics
     aggregated_metrics = {
         "total_steps": 0,
@@ -911,7 +911,8 @@ def getMetricsGaitNew02(Limu1,Limu2, Limu3, Limu4, plotdiagrams):
         "left_swing_times": [],
         "right_swing_times": [],
         "double_support_times": [],
-        "single_support_times": []
+        "single_support_times": [],
+        "exercise_duration_seconds": total_duration_seconds
     }
 
     for i in range(len(all_extrema) - 1):

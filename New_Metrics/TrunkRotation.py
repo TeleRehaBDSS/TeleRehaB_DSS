@@ -170,7 +170,7 @@ def getMetricsSittingNew01(Limu2, plotdiagrams):
             "pace_movements_per_second": pace_movements_per_second,
             "mean_duration_seconds": mean_duration_seconds,
             "std_duration_seconds": std_duration_seconds,
-            "total time": total_time
+            "exercise_duration_seconds": total_time
         }
     }
     

@@ -36,7 +36,7 @@ def calculate_metrics(peaks, signal, sampling_rate):
         "std_combined_range_degrees": std_combined_range_degrees,
         "mean_duration_seconds": mean_duration_seconds,
         "std_duration_seconds": std_duration_seconds,
-        "Exercise_duration": exercise_duration,
+        "exercise_duration_seconds": exercise_duration,
         "movement_duration": intervals.tolist()  
     }
     return metrics

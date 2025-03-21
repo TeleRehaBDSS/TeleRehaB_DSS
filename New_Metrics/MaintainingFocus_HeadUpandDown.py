@@ -303,7 +303,7 @@ def getMetricsSittingOld02(Limu1, plotdiagrams):
     else:
         mean_duration = -1
         std_duration = -1        
-
+    total_duration_seconds = (df_Limu1.index[-1] - df_Limu1.index[0]).total_seconds()
     # Output the metrics
     #print(f"Number of movements: {len(filtered_pairs)}")
     #print(f"Pace: {pace:.2f} movements per second")
@@ -317,7 +317,8 @@ def getMetricsSittingOld02(Limu1, plotdiagrams):
             "mean_range_degrees": float(mean_range),
             "std_range_degrees": float(std_range),
             "mean_duration_seconds": float(mean_duration),
-            "std_duration_seconds": float(std_duration)
+            "std_duration_seconds": float(std_duration),
+            "exercise_duration_seconds":total_duration_seconds
         }
     }
     print (metrics_data)

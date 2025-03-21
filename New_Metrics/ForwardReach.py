@@ -291,7 +291,7 @@ def getMetricsForwardReach(Limu1, Limu2, Limu3, plotdiagrams):
                 "mean_duration_seconds": mean_duration,
                 "std_duration_seconds": std_duration,
                 "Exercise_duration": exercise_duration,
-                "movement_duration": metrics_phase1['movement_duration'] + metrics_phase2['movement_duration'],
+                "exercise_duration_seconds": metrics_phase1['movement_duration'] + metrics_phase2['movement_duration'],
                 "symmetry": symmetry
             }
         }

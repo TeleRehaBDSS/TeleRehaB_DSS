@@ -135,9 +135,13 @@ def getMetricsStretching2(Limu2, plotdiagrams):
     df_Limu2['Timestamp'] = pd.to_datetime(df_Limu2['Timestamp'])
     df_Limu2 = df_Limu2.sort_values(by='Timestamp')
     df_Limu2.set_index('Timestamp', inplace=True)
- 
+    total_duration_seconds = (df_Limu2.index[-1] - df_Limu2.index[0]).total_seconds()
     # Compile metrics
     metrics_data = {
+        "total_metrics":{
+            "exercise_duration_seconds": total_duration_seconds
+        }
     }
+
     
     return json.dumps(metrics_data, indent=4)

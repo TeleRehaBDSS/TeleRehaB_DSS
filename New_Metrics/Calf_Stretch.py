@@ -244,9 +244,14 @@ def getMetricsStretching3(Limu1, Limu2, Limu3, plotdiagrams):
     df_Limu3 = df_Limu3.sort_values(by='elapsed(time)')
     df_Limu3.set_index('elapsed(time)', inplace=True)
 
+    total_duration_seconds = (df_Limu1.index[-1] - df_Limu1.index[0]).total_seconds()
 
     # Compile metrics into dictionary
-    metrics_data = {}
+    metrics_data = {
+        "total_metrics":{
+            "exercise_duration_seconds": total_duration_seconds
+        }
+    }
 
 
     return json.dumps(metrics_data, indent=4)

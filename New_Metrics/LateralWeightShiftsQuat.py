@@ -332,7 +332,7 @@ def getMetricsStandingNew01(Limu2, Limu3, Limu4, plotdiagrams):
 
     mean_duration_right = np.mean(right_durations) if right_durations else 0
     std_duration_right = np.std(right_durations) if right_durations else 0
-
+    total_duration_seconds = (df_Limu3.index[-1] - df_Limu3.index[0]).total_seconds()
     # Calculate metrics separately for each foot
     metrics_data = {
         "total_metrics": {
@@ -340,13 +340,15 @@ def getMetricsStandingNew01(Limu2, Limu3, Limu4, plotdiagrams):
                 "number_of_movements": num_left_movements,
                 "pace_movements_per_second": pace_left,
                 "mean_duration_seconds": mean_duration_left,
-                "std_duration_seconds": std_duration_left
+                "std_duration_seconds": std_duration_left,
+                "exercise_duration_seconds": total_duration_seconds
             },
             "RIGHT LEG": {
                 "number_of_movements": num_right_movements,
                 "pace_movements_per_second": pace_right,
                 "mean_duration_seconds": mean_duration_right,
-                "std_duration_seconds": std_duration_right
+                "std_duration_seconds": std_duration_right,
+                "exercise_duration_seconds": total_duration_seconds
             }
         }
     }

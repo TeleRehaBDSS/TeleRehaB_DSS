@@ -238,7 +238,7 @@ def getMetricsStandingOld04(Limu2, Limu3, Limu4, plotdiagrams):
         mean_duration_left_right = np.mean(left_right_durations) if left_right_durations else None
         mean_duration_right_left = np.mean(right_left_durations) if right_left_durations else None
         symmetry = mean_duration_left_right / mean_duration_right_left if mean_duration_left_right and mean_duration_right_left else None
-
+        total_duration_seconds = (df_Limu2.index[-1] - df_Limu2.index[0]).total_seconds()
         # Store metrics
 
         metrics_data = {
@@ -250,7 +250,8 @@ def getMetricsStandingOld04(Limu2, Limu3, Limu4, plotdiagrams):
             "Duration Standard Deviation": float(std_duration),
             "Mean Duration Left-to-Right (Max-to-Min)": mean_duration_left_right,
             "Mean Duration Right-to-Left (Min-to-Max)": mean_duration_right_left,
-            "Symmetry Ratio (Left-to-Right / Right-to-Left)": symmetry
+            "Symmetry Ratio (Left-to-Right / Right-to-Left)": symmetry,
+            "exercise_duration_seconds":total_duration_seconds
         }
         }
 

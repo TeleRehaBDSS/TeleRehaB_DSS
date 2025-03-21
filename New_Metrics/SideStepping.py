@@ -603,7 +603,7 @@ def getMetricsGaitNew01(Limu3, Limu4, plotdiagrams):
     # plt.legend()
     # plt.grid(True)
     # plt.show()
-
+    total_duration_seconds = (df_Limu3.index[-1] - df_Limu3.index[0]).total_seconds()
     metrics_data = {
             "total_metrics": {
                 "Gait Cycle":{
@@ -623,7 +623,8 @@ def getMetricsGaitNew01(Limu3, Limu4, plotdiagrams):
                     "Right Swing peak Times": right_swing_peak_times,
                     "Left Toe Off Times": left_toe_off_times,
                     "Left Swing peak Times": left_swing_peak_times,
-                    "Cadence": cadence
+                    "Cadence": cadence,
+                    "exercise_duration_seconds": total_duration_seconds
                                 }
                 
         }

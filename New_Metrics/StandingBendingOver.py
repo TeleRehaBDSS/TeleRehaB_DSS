@@ -314,7 +314,7 @@ def getMetricsStandingOld03(Limu1, Limu2, plotdiagrams):
         start_index = head_minima_filtered[i]
         end_index = head_maxima_filtered[i + 1]
         chest_to_chin_times.append((end_index - start_index) * time_interval)
-
+    total_duration_seconds = (df_Limu1.index[-1] - df_Limu1.index[0]).total_seconds()
     metrics_data = {   
         "total_metrics": {
             "number_of_movements": len(pelvis_maxima_filtered),
@@ -325,7 +325,8 @@ def getMetricsStandingOld03(Limu1, Limu2, plotdiagrams):
             "chin_to_chest_mean_time": np.mean(chin_to_chest_times),
             "chin_to_chest_std_time": np.std(chin_to_chest_times),
             "chest_to_chin_mean_time": np.mean(chest_to_chin_times),
-            "chest_to_chin_std_time": np.std(chest_to_chin_times)
+            "chest_to_chin_std_time": np.std(chest_to_chin_times),
+            "exercise_duration_seconds": total_duration_seconds
         }
     }
 

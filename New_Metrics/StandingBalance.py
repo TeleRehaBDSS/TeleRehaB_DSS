@@ -256,7 +256,7 @@ def getMetricsStandingNew01(Limu2, plotdiagrams):
             "std_range_degrees": float(std_combined_range),
             "mean_duration_seconds": float(mean_duration),
             "std_duration_seconds": float(std_duration),
-            "Exersice_duration" : total_duration_seconds
+            "exercise_duration_seconds" : total_duration_seconds
         }
     }
     print(metrics_data)

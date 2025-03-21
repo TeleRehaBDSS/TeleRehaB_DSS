@@ -64,7 +64,7 @@ def calculate_metrics_with_sampling(valleys, timestamps, y_data, sampling_freque
         "std_combined_range_degrees": np.std(ranges) if ranges else 0,
         "mean_duration_seconds": np.mean(durations) if durations else 0,
         "std_duration_seconds": np.std(durations) if durations else 0,
-        "Exercise_duration": len(y_data) * sampling_period,
+        "exercise_duration_seconds": len(y_data) * sampling_period,
         "movement_duration": durations
     }
     return metrics
