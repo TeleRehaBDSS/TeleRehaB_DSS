@@ -457,26 +457,6 @@ def runScenario(queueData):
         logger.error(f"Error: {e}")
 
 
-# def checkIAMALIVE(iamalive_queue):
-#     client2 = mqtt.Client()
-
-#     client2.on_connect = on_connect2
-#     client2.on_message = on_message2(iamalive_queue)
-#     client2.connect(MQTT_BROKER_HOST, MQTT_BROKER_PORT, MQTT_KEEP_ALIVE_INTERVAL)
-#     client2.loop_start()
-
-
-# def on_connect2(client, userdata, flags, rc):
-#     print(f"Connected with result code {rc}")
-#     client.subscribe([("iamalive_topic", 0)])
-
-
-# def on_message2(client, userdata, msg, iamalive_queue):
-#     payload = json.loads(msg.payload.decode())
-#     print(f"Received message on {msg.topic}: {payload}")
-
-#     if msg.topic == "iamalive_topic":
-#         iamalive_queue.put('OK')
 
 
 # MQTT setup

@@ -165,7 +165,7 @@ def start_exercise_demo(exercise):
     elif exercise['exerciseId'] == 6:
         exercise_name = f"VC holobalance_standing_3 P{exercise['progression']}"
     elif exercise['exerciseId'] == 7:
-        exercise_name = f"VC holobalance_standing_4 P{exercise['progression']}"
+        exercise_name = f"VC holobalance_standing_5 P{exercise['progression']}"
     elif exercise['exerciseId'] == 8:
         exercise_name = f"VC holobalance_walking_1 P{exercise['progression']}"
     elif exercise['exerciseId'] == 9:
@@ -189,11 +189,11 @@ def start_exercise_demo(exercise):
     elif exercise['exerciseId'] == 18:
         exercise_name = f"VC holobalance_sitting_8 P{exercise['progression']}"
     elif exercise['exerciseId'] == 19:
-        exercise_name = f"VC holobalance_standing_5 P{exercise['progression']}"
+        exercise_name = f"VC holobalance_standing_6 P{exercise['progression']}"
     elif exercise['exerciseId'] == 20:
         exercise_name = f"VC holobalance_standing_7 P{exercise['progression']}"
     elif exercise['exerciseId'] == 21:
-        exercise_name = f"VC holobalance_standing_6 P{exercise['progression']}"
+        exercise_name = f"VC holobalance_standing_8 P{exercise['progression']}"
     elif exercise['exerciseId'] == 22:
         exercise_name = f"VC holobalance_walking_4 P{exercise['progression']}"
     elif exercise['exerciseId'] == 23:
