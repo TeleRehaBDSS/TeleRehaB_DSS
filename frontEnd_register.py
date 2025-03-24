@@ -89,7 +89,7 @@ def create_gui():
 
     # Load and display logo
     logo = Image.open(LOGO_PATH)  # Replace with the correct path to your logo
-    logo = logo.resize((300, 200), Image.ANTIALIAS)
+    logo = logo.resize((300, 200), Image.LANCZOS)
     logo = ImageTk.PhotoImage(logo)
     logo_label = tk.Label(root, image=logo)
     logo_label.grid(row=0, columnspan=2)
