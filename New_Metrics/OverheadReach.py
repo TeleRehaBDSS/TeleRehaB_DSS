@@ -202,143 +202,91 @@ def get_metrics(imu1,imu2,imu3,imu4, counter):
         return returnedJson
 
 def getMetricsStandingOld03(Limu1, Limu2, plotdiagrams):
+    def normalize(series):
+        return (series - series.min()) / (series.max() - series.min())
+
     columns = ['Timestamp', 'elapsed(time)',  'W(number)', 'X(number)', 'Y (number)', 'Z (number)']
     df_Limu1 = pd.DataFrame(Limu1, columns=columns)
-    df_Limu1['elapsed(time)'] = pd.to_datetime(df_Limu1['elapsed(time)'], unit='ms')
-    df_Limu1 = df_Limu1.sort_values(by='elapsed(time)')
-    df_Limu1.set_index('elapsed(time)', inplace=True)
-    
-    columns = ['Timestamp', 'elapsed(time)',  'W(number)', 'X(number)', 'Y (number)', 'Z (number)']
     df_Limu2 = pd.DataFrame(Limu2, columns=columns)
+
+    df_Limu1['elapsed(time)'] = pd.to_datetime(df_Limu1['elapsed(time)'], unit='ms')
     df_Limu2['elapsed(time)'] = pd.to_datetime(df_Limu2['elapsed(time)'], unit='ms')
-    df_Limu2 = df_Limu2.sort_values(by='elapsed(time)')
-    df_Limu2.set_index('elapsed(time)', inplace=True)
 
+    df_Limu1 = df_Limu1.sort_values(by='elapsed(time)').set_index('elapsed(time)')
+    df_Limu2 = df_Limu2.sort_values(by='elapsed(time)').set_index('elapsed(time)')
 
-    quaternions1 = df_Limu1[['X(number)', 'Y (number)', 'Z (number)', 'W(number)']].to_numpy()
-    rotations1 = R.from_quat(quaternions1)
-    euler_angles1 = rotations1.as_euler('xyz', degrees=False)
-    euler_df1 = pd.DataFrame(euler_angles1, columns=['Roll (rad)', 'Pitch (rad)', 'Yaw (rad)'])
-    euler_angles_degrees1 = rotations1.as_euler('xyz', degrees=True)
-    euler_df_degrees1 = pd.DataFrame(euler_angles_degrees1, columns=['Roll (degrees)', 'Pitch (degrees)', 'Yaw (degrees)'])
-
-    quaternions2 = df_Limu2[['X(number)', 'Y (number)', 'Z (number)', 'W(number)']].to_numpy()
-    rotations2 = R.from_quat(quaternions2)
-    euler_angles2 = rotations2.as_euler('xyz', degrees=True)
-    euler_df2 = pd.DataFrame(euler_angles2, columns=['Roll (rad)', 'Pitch (rad)', 'Yaw (rad)'])
-    euler_angles_degrees2 = rotations2.as_euler('xyz', degrees=True)
-    euler_df_degrees2 = pd.DataFrame(euler_angles_degrees2, columns=['Roll (degrees)', 'Pitch (degrees)', 'Yaw (degrees)'])
-
-
-    start_time = df_Limu2.index.min()
-    end_time = df_Limu2.index.max()
-    interval_length = pd.Timedelta(seconds=5)
+    # Convert to Euler angles
+    quat1 = df_Limu1[['X(number)', 'Y (number)', 'Z (number)', 'W(number)']].to_numpy()
+    quat2 = df_Limu2[['X(number)', 'Y (number)', 'Z (number)', 'W(number)']].to_numpy()
     
-    quaternions_df1 = df_Limu1;
+    euler1 = R.from_quat(quat1).as_euler('xyz', degrees=True)
+    euler2 = R.from_quat(quat2).as_euler('xyz', degrees=True)
 
+    df_Limu1['Pitch (deg)'] = euler1[:, 1]
+    df_Limu2['Pitch (deg)'] = euler2[:, 1]
+
+    # Smooth signals
     fs = 50
-    cutoff = 0.5
+    interval = 1 / fs
+    time_interval = interval  # used for duration
 
-    # Convert quaternions to Euler angles (in degrees)
+    head_pitch = normalize(df_Limu1['Pitch (deg)'])
+    pelvis_pitch = normalize(df_Limu2['Pitch (deg)'])
 
-    df_Limu2['Pitch (degrees)'] = euler_angles2[:, 1]  # Extract pitch
+    head_pitch = moving_average_filter(head_pitch, window_size=50)
+    pelvis_pitch = moving_average_filter(pelvis_pitch, window_size=50)
 
-    head_normalized = normalize(df_Limu1['W(number)'])
-    pelvis_normalized = normalize(df_Limu2['X(number)'])   
-    pelvis_normalized_pitch = normalize(df_Limu2['Pitch (degrees)'])
+    # Autocorrelation-based distance estimate
+    def calc_distance(signal):
+        autocorr = correlate(signal, signal, mode='full')
+        autocorr = autocorr[autocorr.size // 2:]
+        return next(i for i in range(1, len(autocorr)) if autocorr[i] < autocorr[0] * 0.90)
 
-    head_normalized = moving_average_filter(head_normalized,window_size=25)
-    pelvis_normalized = moving_average_filter(pelvis_normalized,window_size=25)
-    pelvis_normalized_pitch = moving_average_filter(pelvis_normalized_pitch,window_size=25)
+    distance = calc_distance(df_Limu1['W(number)'])
 
-    # Parameters for the filter
-    cutoff = 1.5  # Cutoff frequency in Hz
-    sampling_rate = 100  # Sampling rate in Hz (adjust based on your data)
+    # Detect head movements
+    head_maxima, _ = find_peaks(df_Limu1['W(number)'],prominence=0.07)
+    head_minima, _ = find_peaks(-df_Limu1['W(number)'],prominence=0.07)
 
-    # Apply the low-pass filter
-    head_filtered = low_pass_filter(head_normalized, cutoff, sampling_rate)
-    pelvis_filtered = low_pass_filter(pelvis_normalized, cutoff, sampling_rate)
+    # Filter minima to pair with maxima
+    head_minima_filtered = head_minima
 
-    # Get autocorrelation and lag for each signal
-    head_autocorr, head_lags = calculate_autocorrelation(head_filtered)
-    pelvis_autocorr, pelvis_lags = calculate_autocorrelation(pelvis_filtered)
-    degrees_autocorr , degrees_lags = calculate_autocorrelation(pelvis_normalized_pitch)
-    # Find the lag of the first significant peak in autocorrelation
-    head_distance = head_lags[next(i for i in range(1, len(head_autocorr)) if head_autocorr[i] < head_autocorr[0] * 0.9)]
-    pelvis_distance = pelvis_lags[next(i for i in range(1, len(pelvis_autocorr)) if pelvis_autocorr[i] < pelvis_autocorr[0] * 0.9)]
-    degrees_distance = degrees_lags[next(i for i in range(1, len(degrees_autocorr)) if degrees_autocorr[i] < degrees_autocorr[0] * 0.9)]
+    durations = []
+    ranges_head = []
+    ranges_pelvis = []
 
-    # Detect maxima
-    head_maxima, _ = find_peaks(head_filtered, distance=head_distance)
-    pelvis_maxima, _ = find_peaks(pelvis_filtered,prominence=0.04, distance=degrees_distance)
-    degrees_maxima, _ = find_peaks(pelvis_normalized_pitch, distance=degrees_distance)
-    head_maxima_filtered = filter_maxima(head_filtered, head_maxima)
-    pelvis_maxima_filtered = pelvis_maxima
+    for i in range(min(len(head_maxima), len(head_minima_filtered))):
+        start = min(head_maxima[i], head_minima_filtered[i])
+        end = max(head_maxima[i], head_minima_filtered[i])
+        durations.append((end - start) * time_interval)
+        ranges_head.append(abs(df_Limu1['Pitch (deg)'].iloc[end] - df_Limu1['Pitch (deg)'].iloc[start]))
+        ranges_pelvis.append(abs(df_Limu2['Pitch (deg)'].iloc[end] - df_Limu2['Pitch (deg)'].iloc[start]))
 
-    # Detect minima by inverting the filtered signals
-    head_minima, _ = find_peaks(-head_filtered, distance=head_distance)
-    pelvis_minima, _ = find_peaks(-pelvis_filtered, distance=pelvis_distance)
-    degrees_minima, _ = find_peaks(-pelvis_normalized_pitch, distance=degrees_distance)
+    total_duration = (df_Limu1.index[-1] - df_Limu1.index[0]).total_seconds()
+    pace = len(durations) / total_duration if total_duration > 0 else 0
 
-
-    head_minima_filtered = filter_minima(head_filtered, head_maxima_filtered, head_minima)
-    pelvis_minima_filtered = pelvis_minima
-    # Define time interval (0.01 seconds between points)
-    time_interval = 0.01  # seconds
-    # Initialize a dictionary to store the metrics
-
-    # 2. Time between two pelvis maxima (time of movement)
-    time_between_pelvis_maxima = np.diff(pelvis_maxima_filtered) * time_interval
-
-
-    # 3. From a pelvis maximum to a pelvis minimum (bend over time)
-    range_degrees = []  # Store range of each movement
-
-    for i in range(len(pelvis_maxima) - 1):
-        # Calculate range of movement in degrees
-        max_angle = df_Limu2['Pitch (degrees)'][pelvis_minima[i]]
-        min_angle = df_Limu2['Pitch (degrees)'][pelvis_maxima[i]]
-        range_degrees.append(np.abs(max_angle - min_angle))
-
-
-    # 5. Head movements: chin to chest (head max to head min) and chest to chin (head min to head max)
-    chin_to_chest_times = []
-    chest_to_chin_times = []
-
-    for i in range(len(head_minima_filtered)-1):
-        start_index = head_maxima_filtered[i]
-        end_index = head_minima_filtered[i]
-        chin_to_chest_times.append((end_index - start_index) * time_interval)
-
-    for i in range(len(head_minima_filtered)-1):
-        start_index = head_minima_filtered[i]
-        end_index = head_maxima_filtered[i + 1]
-        chest_to_chin_times.append((end_index - start_index) * time_interval)
-    total_duration_seconds = (df_Limu1.index[-1] - df_Limu1.index[0]).total_seconds()
-    metrics_data = {   
+    metrics_data = {
         "total_metrics": {
-            "number_of_movements": len(pelvis_maxima_filtered),
-            "movement_mean_time": np.mean(time_between_pelvis_maxima),
-            "movement_std_time": np.std(time_between_pelvis_maxima),
-            "range_mean_degrees" : np.mean(range_degrees),
-            "range_std_degrees" : np.std(range_degrees),
-            "chin_to_chest_mean_time": np.mean(chin_to_chest_times),
-            "chin_to_chest_std_time": np.std(chin_to_chest_times),
-            "chest_to_chin_mean_time": np.mean(chest_to_chin_times),
-            "chest_to_chin_std_time": np.std(chest_to_chin_times),
-            "exercise_duration_seconds": total_duration_seconds
+            "number_of_movements": len(durations),
+            "pace_movements_per_second": pace,
+            "mean_duration_seconds": np.mean(durations) if durations else 0,
+            "std_duration_seconds": np.std(durations) if durations else 0,
+            "mean_range_degrees_head": np.mean(ranges_head) if ranges_head else 0,
+            "std_range_degrees_head": np.std(ranges_head) if ranges_head else 0,
+            "mean_range_degrees_pelvis": np.mean(ranges_pelvis) if ranges_pelvis else 0,
+            "std_range_degrees_pelvis": np.std(ranges_pelvis) if ranges_pelvis else 0,
+            "exercise_duration": total_duration
         }
     }
 
     print(metrics_data)
-            
-            
-    datetime_string = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-    filename = f"{datetime_string}_SeatedBendingOver_metrics.txt"
 
-    # Save the metrics to a file
+    # Save to file
+    datetime_string = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    filename = f"{datetime_string}_OverheadReach_metrics.txt"
     save_metrics_to_txt(metrics_data, filename)
 
+    print(json.dumps(metrics_data, indent=4))
     return json.dumps(metrics_data, indent=4)
 
     
