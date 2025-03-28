@@ -361,19 +361,7 @@ def getMetricsSittingOld01(Limu1,Limu2,Limu3,Limu4, plotdiagrams):
         mean_duration = -1
         std_duration = -1        
 
-    interval_movements = 0
 
-    # Get the start and end time of the current interval
-    interval_start = df_Limu1.index[0]
-    interval_end = df_Limu1.index[-1]
-
-    # Count movements within the current interval
-    for pair in significant_movements:
-        movement_time = df_Limu1.iloc[pair[0]].name  # Time of the valley (start of movement)
-        if interval_start <= movement_time <= interval_end:
-            interval_movements += 1
-
-    exercise_duration = timestamps.iloc[-1] - timestamps.iloc[0]
 
     metrics_data = {
         "total_metrics": {
@@ -383,7 +371,7 @@ def getMetricsSittingOld01(Limu1,Limu2,Limu3,Limu4, plotdiagrams):
             "std_range_degrees": float(std_range),
             "mean_duration_seconds": float(mean_duration),
             "std_duration_seconds": float(std_duration),
-            "Exercise duration (seconds)" : exercise_duration
+            "Exercise duration (seconds)" : total_duration_seconds
         }
     }
 

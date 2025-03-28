@@ -160,7 +160,7 @@ def getMetricsSittingNew01(Limu2, plotdiagrams):
         std_duration_seconds = 0
     
     # Calculate movement pace
-    total_time = (df_Limu2.index[-1] - df_Limu2.index[0]).total_seconds() *1000000
+    total_time = (df_Limu2.index[-1] - df_Limu2.index[0]).total_seconds() 
     pace_movements_per_second = number_of_movements / total_time if total_time > 0 else 0
     
     # Compile metrics

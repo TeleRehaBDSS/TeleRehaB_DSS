@@ -1103,7 +1103,7 @@ def getMetricsSittingNew01(Limu1, Limu2, plotdiagrams=False):
     if final_movements:
         durations = [m['duration'] for m in final_movements]
         ranges = [m['range_degrees'] for m in final_movements]
-        exercise_duration = timestamps.iloc[-1] - timestamps.iloc[0]
+        exercise_duration =(df_Limu1.index[-1] - df_Limu1.index[0]).total_seconds()
         
         metrics_data = {
             "total_metrics" :{

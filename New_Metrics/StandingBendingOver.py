@@ -315,6 +315,7 @@ def getMetricsStandingOld03(Limu1, Limu2, plotdiagrams):
         end_index = head_maxima_filtered[i + 1]
         chest_to_chin_times.append((end_index - start_index) * time_interval)
     total_duration_seconds = (df_Limu1.index[-1] - df_Limu1.index[0]).total_seconds()
+    
     metrics_data = {   
         "total_metrics": {
             "number_of_movements": len(pelvis_maxima_filtered),

@@ -230,6 +230,7 @@ def getMetricsStandingNew02(Limu2, plotdiagrams):
     significant_movements = []
     durations = []
     amplitudes = []
+    
     exercise_duration = (df_Limu2.index[-1] - df_Limu2.index[0]).total_seconds()
 
     for i in range(1, len(movements)):

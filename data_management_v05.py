@@ -1084,7 +1084,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 exercise_code  # Pass the exercise code
                             )
 
-                            metrics_dict = json.load(metrics)
+                            metrics_dict = json.loads(metrics)
                             if (INTERVALS==1) and metrics_dict["total_metrics"]["number_of_movements"]>1:
                                 send_voice_instructions("bph0081")
                             if (INTERVALS==2) and metrics_dict["total_metrics"]["number_of_movements"]>3:
@@ -1162,7 +1162,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 exercise_code  # Pass the exercise code
                             )
 
-                            metrics_dict = json.load(metrics)
+                            metrics_dict = json.loads(metrics)
 
                             scheduleQueue.get()  # Consume the scheduled task
                             INTERVALS += 1
@@ -1225,7 +1225,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 exercise_code  # Pass the exercise code
                             )
 
-                            metrics_dict=json.load(metrics)
+                            metrics_dict=json.loads(metrics)
                             if ((INTERVALS==1) and (metrics_dict["total_metrics"]['LEFT LEG']["number_of_movements"] + metrics_dict["total_metrics"]['RIGHT LEG']["number_of_movements"]) >2):
                                 send_voice_instructions("bph0080")
                             
@@ -1304,7 +1304,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 exercise_code  # Pass the exercise code
                             )
                             
-                            metrics_dict = json.load(metrics)
+                            metrics_dict = json.loads(metrics)
                             if (INTERVALS==0) and metrics_dict["total_metrics"]["number_of_movements"]>5:
                                 send_voice_instructions("bph0081")
                             if (INTERVALS==1) and metrics_dict["total_metrics"]["number_of_movements"]>7:
@@ -1372,7 +1372,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 exercise_code  # Pass the exercise code
                             )
 
-                            metrics_dict = json.load(metrics)
+                            metrics_dict = json.loads(metrics)
 
                             if (INTERVALS==1) and metrics_dict["total_metrics"]["number_of_movements"]>2:
                                 send_voice_instructions("bph0079")
