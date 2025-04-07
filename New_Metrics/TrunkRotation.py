@@ -132,9 +132,9 @@ def getMetricsSittingNew01(Limu2, plotdiagrams):
     
     columns = ['Timestamp', 'elapsed(time)',  'W(number)', 'X(number)', 'Y (number)', 'Z (number)']
     df_Limu2 = pd.DataFrame(Limu2, columns=columns)
-    df_Limu2['Timestamp'] = pd.to_datetime(df_Limu2['Timestamp'])
-    df_Limu2 = df_Limu2.sort_values(by='Timestamp')
-    df_Limu2.set_index('Timestamp', inplace=True)
+    df_Limu2['elapsed(time)'] = pd.to_datetime(df_Limu2['elapsed(time)'], unit='ms')
+    df_Limu2 = df_Limu2.sort_values(by='elapsed(time)')
+    df_Limu2.set_index('elapsed(time)', inplace=True)
 
 
     # Step 1: Preprocess the z-axis data by smoothing
@@ -152,7 +152,7 @@ def getMetricsSittingNew01(Limu2, plotdiagrams):
     
     # Calculate movement duration statistics
     if len(peaks) > 1:
-        durations = np.diff(df_Limu2.index[peaks].astype(np.int64)) / 1e6  # convert nanoseconds to milliseconds
+        durations = np.diff(df_Limu2.index[peaks].astype(np.int64)) 
         mean_duration_seconds = np.mean(durations) if len(durations) > 0 else 0
         std_duration_seconds = np.std(durations) if len(durations) > 0 else 0
     else:
