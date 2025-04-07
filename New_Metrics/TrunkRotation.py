@@ -152,7 +152,7 @@ def getMetricsSittingNew01(Limu2, plotdiagrams):
     
     # Calculate movement duration statistics
     if len(peaks) > 1:
-        durations = np.diff(df_Limu2.index[peaks]).total_seconds().astype(float) *1000000
+        durations = np.diff(df_Limu2.index[peaks].astype(np.int64)) / 1e6  # convert nanoseconds to milliseconds
         mean_duration_seconds = np.mean(durations) if len(durations) > 0 else 0
         std_duration_seconds = np.std(durations) if len(durations) > 0 else 0
     else:
