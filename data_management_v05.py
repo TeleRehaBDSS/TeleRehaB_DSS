@@ -36,8 +36,17 @@ from sensor_data import SensorData
 import multiprocessing as mp
 from scipy.interpolate import interp1d
 import csv
+import zipfile
 
-
+def zip_folder(folder_path):
+    zip_filename = f"{folder_path}.zip"
+    with zipfile.ZipFile(zip_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
+        for root, _, files in os.walk(folder_path):
+            for file in files:
+                file_path = os.path.join(root, file)
+                arcname = os.path.relpath(file_path, start=folder_path)
+                zipf.write(file_path, arcname)
+    return zip_filename
 
 
 def reformat_sensor_data(sensor_data_list):
@@ -151,7 +160,7 @@ def get_data_tranch(q1, q2, q3, q4, counter, exercise):
             metrics = get_metrics_SideBend(imu1List, imu2List, imu3List, imu4List, counter)
         else:
             metrics = None
-        return metrics
+        return metrics,folder_name
     return None
 
 
@@ -329,7 +338,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             print('I am calling get_data_tranch')
                             process_and_interpolate_imus(imu_data, target_rate_hz=100)  # 100 Hz target rate
 
-                            metrics = get_data_tranch(
+                            metrics,folder_name = get_data_tranch(
                                 safe_get_imu_queue(imu_data, 'HEAD', manager.Queue()),  # imu1Queue
                                 safe_get_imu_queue(imu_data, 'PELVIS', manager.Queue()),  # imu2Queue
                                 safe_get_imu_queue(imu_data, 'LEFTFOOT', manager.Queue()),  # imu3Queue
@@ -355,7 +364,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             if INTERVALS == 4:
                                 send_voice_instructions("bph0083")
                                 print("Processing the entire data stream...")
-                                final_metrics = get_data_tranch(
+                                final_metrics,folder_path = get_data_tranch(
                                     imu_data.get('HEAD', [None, None, manager.Queue()])[2],  # imu1FinalQueue
                                     imu_data.get('PELVIS', [None, None, manager.Queue()])[2],  # imu2FinalQueue
                                     imu_data.get('LEFTFOOT', [None, None, manager.Queue()])[2],  # imu3FinalQueue
@@ -365,6 +374,8 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 )
                                 if final_metrics is not None:
                                     metrics_queue.put(final_metrics)
+                                    data_zip_path = zip_folder(folder_path)
+                                    scheduleQueue.put(("data_zip", data_zip_path))
                                 break;
     elif exercise_code == 'exer_02':
         while INTERVALS < 4 or not q.empty():
@@ -401,7 +412,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             print('I am calling get_data_tranch')
                             process_and_interpolate_imus(imu_data, target_rate_hz=100)  # 100 Hz target rate
 
-                            metrics = get_data_tranch(
+                            metrics,folder_path = get_data_tranch(
                                 safe_get_imu_queue(imu_data, 'HEAD', manager.Queue()),  # imu1Queue
                                 safe_get_imu_queue(imu_data, 'PELVIS', manager.Queue()),  # imu2Queue
                                 safe_get_imu_queue(imu_data, 'LEFTFOOT', manager.Queue()),  # imu3Queue
@@ -424,7 +435,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             if INTERVALS == 4:
                                 send_voice_instructions("bph0083")
                                 print("Processing the entire data stream...")
-                                final_metrics = get_data_tranch(
+                                final_metrics,folder_path = get_data_tranch(
                                     imu_data.get('HEAD', [None, None, manager.Queue()])[2],  # imu1FinalQueue
                                     imu_data.get('PELVIS', [None, None, manager.Queue()])[2],  # imu2FinalQueue
                                     imu_data.get('LEFTFOOT', [None, None, manager.Queue()])[2],  # imu3FinalQueue
@@ -434,6 +445,8 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 )
                                 if final_metrics is not None:
                                     metrics_queue.put(final_metrics)
+                                    data_zip_path = zip_folder(folder_path)
+                                    scheduleQueue.put(("data_zip", data_zip_path))
                                 break;
     elif exercise_code == 'exer_03': #Sitting Bending Over
         while INTERVALS < 4 or not q.empty():
@@ -470,7 +483,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             print('I am calling get_data_tranch')
                             process_and_interpolate_imus(imu_data, target_rate_hz=100)  # 100 Hz target rate
 
-                            metrics = get_data_tranch(
+                            metrics,folder_path = get_data_tranch(
                                 safe_get_imu_queue(imu_data, 'HEAD', manager.Queue()),  # imu1Queue
                                 safe_get_imu_queue(imu_data, 'PELVIS', manager.Queue()),  # imu2Queue
                                 safe_get_imu_queue(imu_data, 'LEFTFOOT', manager.Queue()),  # imu3Queue
@@ -491,6 +504,8 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 send_voice_instructions("bph0083")
                                 final_metrics = metrics
                                 metrics_queue.put(final_metrics)
+                                data_zip_path = zip_folder(folder_path)
+                                scheduleQueue.put(("data_zip", data_zip_path))
                                 while not q.empty():
                                     q.get()
                                 return  # Exit the function immediately to stop the exercise
@@ -502,7 +517,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             if INTERVALS == 4:
                                 send_voice_instructions("bph0083")
                                 print("Processing the entire data stream...")
-                                final_metrics = get_data_tranch(
+                                final_metrics,folder_path = get_data_tranch(
                                     imu_data.get('HEAD', [None, None, manager.Queue()])[2],  # imu1FinalQueue
                                     imu_data.get('PELVIS', [None, None, manager.Queue()])[2],  # imu2FinalQueue
                                     imu_data.get('LEFTFOOT', [None, None, manager.Queue()])[2],  # imu3FinalQueue
@@ -512,6 +527,8 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 )
                                 if final_metrics is not None:
                                     metrics_queue.put(final_metrics)
+                                    data_zip_path = zip_folder(folder_path)
+                                    scheduleQueue.put(("data_zip", data_zip_path))
                                 break;
 
     elif exercise_code == 'exer_04': #Trunk Rotation
@@ -551,7 +568,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             # interpolate
                             process_and_interpolate_imus(imu_data, target_rate_hz=100)  # 100 Hz target rate
 
-                            metrics = get_data_tranch(
+                            metrics,folder_path = get_data_tranch(
                                 safe_get_imu_queue(imu_data, 'HEAD', manager.Queue()),  # imu1Queue
                                 safe_get_imu_queue(imu_data, 'PELVIS', manager.Queue()),  # imu2Queue
                                 safe_get_imu_queue(imu_data, 'LEFTFOOT', manager.Queue()),  # imu3Queue
@@ -574,6 +591,8 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 final_metrics = metrics
                                 if final_metrics is not None:
                                     metrics_queue.put(final_metrics)
+                                    data_zip_path = zip_folder(folder_path)
+                                    scheduleQueue.put(("data_zip", data_zip_path))
                                 return
                             
                             scheduleQueue.get()  # Consume the scheduled task
@@ -583,7 +602,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             if INTERVALS == 4:
                                 send_voice_instructions("bph0083")
                                 print("Processing the entire data stream...")
-                                final_metrics = get_data_tranch(
+                                final_metrics,folder_path = get_data_tranch(
                                     imu_data.get('HEAD', [None, None, manager.Queue()])[2],  # imu1FinalQueue
                                     imu_data.get('PELVIS', [None, None, manager.Queue()])[2],  # imu2FinalQueue
                                     imu_data.get('LEFTFOOT', [None, None, manager.Queue()])[2],  # imu3FinalQueue
@@ -593,6 +612,8 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 )
                                 if final_metrics is not None:
                                     metrics_queue.put(final_metrics)
+                                    data_zip_path = zip_folder(folder_path)
+                                    scheduleQueue.put(("data_zip", data_zip_path))
                                 break;
     elif exercise_code == 'exer_05': #Toe Raises
         while INTERVALS < 4 or not q.empty():
@@ -629,7 +650,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             print('I am calling get_data_tranch')
                             process_and_interpolate_imus(imu_data, target_rate_hz=100)  # 100 Hz target rate
 
-                            metrics = get_data_tranch(
+                            metrics,folder_path = get_data_tranch(
                                 safe_get_imu_queue(imu_data, 'HEAD', manager.Queue()),  # imu1Queue
                                 safe_get_imu_queue(imu_data, 'PELVIS', manager.Queue()),  # imu2Queue
                                 safe_get_imu_queue(imu_data, 'LEFTFOOT', manager.Queue()),  # imu3Queue
@@ -651,6 +672,8 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 final_metrics =  metrics
                                 if final_metrics is not None:
                                     metrics_queue.put(final_metrics)
+                                    data_zip_path = zip_folder(folder_path)
+                                    scheduleQueue.put(("data_zip", data_zip_path))
                                 while not q.empty():
                                     q.get()
                                 return  # Exit the function immediately to stop the exercise
@@ -662,7 +685,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             if INTERVALS == 4:
                                 send_voice_instructions("bph0083")
                                 print("Processing the entire data stream...")
-                                final_metrics = get_data_tranch(
+                                final_metrics,folder_path = get_data_tranch(
                                     imu_data.get('HEAD', [None, None, manager.Queue()])[2],  # imu1FinalQueue
                                     imu_data.get('PELVIS', [None, None, manager.Queue()])[2],  # imu2FinalQueue
                                     imu_data.get('LEFTFOOT', [None, None, manager.Queue()])[2],  # imu3FinalQueue
@@ -672,6 +695,8 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 )
                                 if final_metrics is not None:
                                     metrics_queue.put(final_metrics)
+                                    data_zip_path = zip_folder(folder_path)
+                                    scheduleQueue.put(("data_zip", data_zip_path))
                                 break;
     elif exercise_code == 'exer_06': #Heel Raises
         while INTERVALS < 4 or not q.empty():
@@ -709,7 +734,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             print('I am calling get_data_tranch')
                             process_and_interpolate_imus(imu_data, target_rate_hz=100)  # 100 Hz target rate
 
-                            metrics = get_data_tranch(
+                            metrics,folder_path = get_data_tranch(
                                 safe_get_imu_queue(imu_data, 'HEAD', manager.Queue()),  # imu1Queue
                                 safe_get_imu_queue(imu_data, 'PELVIS', manager.Queue()),  # imu2Queue
                                 safe_get_imu_queue(imu_data, 'LEFTFOOT', manager.Queue()),  # imu3Queue
@@ -730,6 +755,8 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 final_metrics = metrics
                                 if final_metrics is not None:
                                     metrics_queue.put(final_metrics)
+                                    data_zip_path = zip_folder(folder_path)
+                                    scheduleQueue.put(("data_zip", data_zip_path))
                                 while not q.empty():
                                     q.get()
                                 return  # Exit the function immediately to stop the exercise
@@ -741,7 +768,7 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                             if INTERVALS == 4:
                                 send_voice_instructions("bph0083")
                                 print("Processing the entire data stream...")
-                                final_metrics = get_data_tranch(
+                                final_metrics,folder_path = get_data_tranch(
                                     imu_data.get('HEAD', [None, None, manager.Queue()])[2],  # imu1FinalQueue
                                     imu_data.get('PELVIS', [None, None, manager.Queue()])[2],  # imu2FinalQueue
                                     imu_data.get('LEFTFOOT', [None, None, manager.Queue()])[2],  # imu3FinalQueue
@@ -751,6 +778,8 @@ def receive_imu_data(q, scheduleQueue, config_message, exercise,metrics_queue):
                                 )
                                 if final_metrics is not None:
                                     metrics_queue.put(final_metrics)
+                                    data_zip_path = zip_folder(folder_path)
+                                    scheduleQueue.put(("data_zip", data_zip_path))
                                 break;
     elif exercise_code == 'exer_07': #Seated Marching Spot
         while INTERVALS < 4 or not q.empty():

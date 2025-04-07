@@ -24,6 +24,7 @@ from UDPClient import SendMyIP
 from websocketServer import run_websocket_server
 from pathlib import Path
 
+
 # Get the directory where the script is located
 BASE_DIR = Path(__file__).resolve().parent
 
@@ -134,15 +135,14 @@ def download_file(file_id, save_path, file_type="Logs"):
         logging.error(f"Failed to download file {file_id}. Status: {response.status_code}, Response: {response.text}")
 
 
-# Set up logger
-timestamp = time.time()
-current_time = datetime.now().strftime("%Y-%m-%d")
+# Set up logger with unique filename
+log_timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+log_filename = f"session_{log_timestamp}.log"
 logger = logging.getLogger()
 #logger.setLevel(logging.DEBUG)
 logger.setLevel(logging.INFO)
-formatter = logging.Formatter('%(asctime)s - %(message)s')
-#file_handler = logging.FileHandler(f'{current_time}/app.log', mode='a') 
-file_handler = logging.FileHandler('app.log', mode='a')
+formatter = logging.Formatter('%(asctime)s - %(message)s') 
+file_handler = logging.FileHandler(log_filename, mode='a')
 file_handler.setLevel(logging.DEBUG)
 file_handler.setFormatter(formatter)
 console_handler = logging.StreamHandler(sys.stdout)
@@ -236,12 +236,6 @@ def runScenario(queueData):
     init_mqtt_client()
 
     logging.basicConfig(level=logging.INFO)
-    # test_log_file = "/home/uoi/Documents/GitHub/Telerehab_UOI/WP3_v1/imu_mqtt/2024-12-13/app.log"  # Existing log file to test the upload
-    # if os.path.exists(test_log_file):
-    #     upload_file(test_log_file, "Logs")
-    # else:
-    #     logging.error(f"Test log file {test_log_file} not found.")
-    
     client.publish('STARTVC', 'STARTVC')
     time.sleep(4)
     
@@ -300,8 +294,11 @@ def runScenario(queueData):
                     config_message = f"HEAD={imu_head}-QUATERNIONS,PELVIS={imu_pelvis}-OFF,LEFTFOOT={imu_left}-OFF,RIGHTFOOT={imu_right}-OFF,exer_01"
                 elif exercise['exerciseId'] == 2:
                     config_message = f"HEAD={imu_head}-QUATERNIONS,PELVIS={imu_pelvis}-OFF,LEFTFOOT={imu_left}-OFF,RIGHTFOOT={imu_right}-OFF,exer_02"
-                elif exercise['exerciseId'] == 3:
-                    config_message = f"HEAD={imu_head}-QUATERNIONS,PELVIS={imu_pelvis}-QUATERNIONS,LEFTFOOT={imu_left}-OFF,RIGHTFOOT={imu_right}-OFF,exer_03"
+                elif exercise['exerciseId'] == 3 :
+                    if exercise['progression'] == 0 or exercise['progression'] == 1:
+                        config_message = f"HEAD={imu_head}-QUATERNIONS,PELVIS={imu_pelvis}-QUATERNIONS,LEFTFOOT={imu_left}-OFF,RIGHTFOOT={imu_right}-OFF,exer_03"
+                    else:
+                        config_message = f"HEAD={imu_head}-QUATERNIONS,PELVIS={imu_pelvis}-QUATERNIONS,LEFTFOOT={imu_left}-OFF,RIGHTFOOT={imu_right}-OFF,exer_25" #Side Bend Here
                 elif exercise['exerciseId'] == 4:
                     config_message = f"HEAD={imu_head}-OFF,PELVIS={imu_pelvis}-QUATERNIONS,LEFTFOOT={imu_left}-OFF,RIGHTFOOT={imu_right}-OFF,exer_09"
                 elif exercise['exerciseId'] == 5:
@@ -378,6 +375,15 @@ def runScenario(queueData):
                 # Wait for the IMU process to finish
                 imu_process.join()
 
+                data_zip_path = None
+                while not scheduleQueue.empty():
+                    msg = scheduleQueue.get()
+                    if isinstance(msg, tuple) and msg[0] == "data_zip":
+                        data_zip_path = msg[1]
+                        break
+
+                if data_zip_path:
+                    upload_file(data_zip_path, "Data")
                 # Terminate the scheduler process
                 scheduler_process.terminate()
                 scheduler_process.join()
@@ -398,6 +404,8 @@ def runScenario(queueData):
                 
                 # Post metrics after the exercise ends
 
+                
+                    
                 if not metrics_queue.empty():
                     metrics = metrics_queue.get()
                     print(metrics)
@@ -410,6 +418,55 @@ def runScenario(queueData):
 
                     #Post the results
                     #metrics["polar_data"] = polar_data
+                    if (exercise["isFirstSession"])== False :
+                        try:
+                # Combine sending voice instruction and waiting for response
+                            symptomps_response = send_message_with_speech_to_text("bph0101")
+                        except Exception as e:
+                            logger.error(f"Failed to send voice instruction or get response for Exercise ID {exercise['exerciseId']}: {e}")
+                            return
+                        
+                        #If the answer is no ask the patient to move in another exercise
+                        if symptomps_response == "no":
+                            # Ask if wanna to move to another exercise
+                            metrics["symptoms"] = {"symptom_check": "no"}
+
+                        else:
+                            # Create a new key in metrics for symptoms
+                            metrics["symptoms"] = {}
+
+                            # Ask about headache
+                            try:
+                                headache_response = send_message_with_speech_to_text("bph0077")
+                                metrics["symptoms"]["headache"] = {"present": headache_response}
+                                if headache_response == "yes":
+                                    rate_headache = send_message_with_speech_to_text_2("bph0110")
+                                    metrics["symptoms"]["headache"]["severity"] = rate_headache
+                            except Exception as e:
+                                logger.error("Error getting headache response: %s", e)
+
+                            # Ask about disorientation
+                            try:
+                                disorientated_response = send_message_with_speech_to_text("bph0087")
+                                metrics["symptoms"]["disorientated"] = {"present": disorientated_response}
+                                if disorientated_response == "yes":
+                                    rate_disorientated = send_message_with_speech_to_text_2("bph0110")
+                                    metrics["symptoms"]["disorientated"]["severity"] = rate_disorientated
+                            except Exception as e:
+                                logger.error("Error getting disorientation response: %s", e)
+
+                            # Ask about blurry vision
+                            try:
+                                blurry_vision_response = send_message_with_speech_to_text("bph0089")
+                                metrics["symptoms"]["blurry_vision"] = {"present": blurry_vision_response}
+                                if blurry_vision_response == "yes":
+                                    rate_blurry_vision = send_message_with_speech_to_text_2("bph0110")
+                                    metrics["symptoms"]["blurry_vision"]["severity"] = rate_blurry_vision
+                            except Exception as e:
+                                logger.error("Error getting blurry vision response: %s", e)
+                                send_voice_instructions("bph")
+                                break;
+
                     post_results(json.dumps(metrics), exercise['exerciseId'])
                    
                 else:
@@ -421,7 +478,7 @@ def runScenario(queueData):
                         return
                     
                 
-
+                
                 # Mark the exercise as completed
                 print(f"Exercise {exercise['exerciseName']} completed.")
                 time.sleep(10)
@@ -430,6 +487,15 @@ def runScenario(queueData):
                 exercises = get_daily_schedule()
                 ###If there are no exercises then end the 
                 if not exercises :
+                     # Close all handlers and rename the log
+                    for handler in logger.handlers[:]:
+                        handler.flush()
+                        handler.close()
+                        logger.removeHandler(handler)
+                    
+                    txt_file_path = convert_log_to_txt(log_filename)
+                    upload_file(txt_file_path, "Logs")
+
                     send_voice_instructions("bph0222")
                     send_voice_instructions("bph0108")
                     client.publish('EXIT','EXIT')
@@ -443,6 +509,15 @@ def runScenario(queueData):
                     return
 
                 if response == "no":
+                    # Close all handlers and rename the log
+                    for handler in logger.handlers[:]:
+                        handler.flush()
+                        handler.close()
+                        logger.removeHandler(handler)
+                    
+                    txt_file_path = convert_log_to_txt(log_filename)
+                    upload_file(txt_file_path, "Logs")
+                    
                     print("User chose to stop. Exiting scenario.")
                     send_voice_instructions("bph0222")
                     send_voice_instructions("bph0108")
@@ -457,9 +532,6 @@ def runScenario(queueData):
 
     except requests.exceptions.RequestException as e:
         logger.error(f"Error: {e}")
-
-
-
 
 # MQTT setup
 def on_connect(client, userdata, flags, rc):
