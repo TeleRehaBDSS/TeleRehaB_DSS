@@ -358,22 +358,77 @@ def send_message_with_speech_to_text(code, timeout=20):
 
 
 def send_message_with_speech_to_text_2(code, timeout=20):
-    """
-    Send an oral instruction message and wait for FINISH_RESPONSE.
 
-    Args:
-        code (str): Code to identify the message.
-        timeout (int): Time to wait for a response before retrying (default: 20 seconds).
-
-    Returns:
-        str: The user's response ("low","moderate" or "severe").
-    """
     global finish_response
     reset_global_flags()
 
     # Message format stays the same as simple oral message
     oral_message = {
         "action": "SPEAK",
+        "exercise": "/",
+        "timestamp": datetime.now().isoformat(),
+        "code": code,
+        "message": "You have stopped too early, please try to continue the exercise. Yes or No?",
+        "language": "/"
+    }
+
+    while True:
+        # Send the message
+        client.publish(MSG_TOPIC, json.dumps(oral_message))
+        print(f"Published oral message: {oral_message}")
+        start_time = time.time()
+
+        # Wait for response
+        while time.time() - start_time < timeout:
+            if finish_response in ["low", "moderate","severe"]:
+                print(f"Received FINISH_RESPONSE: {finish_response}")
+                return finish_response  # Exit loop and return response
+            time.sleep(0.5)
+
+        # No response received, retrying
+        print("No response received. Retrying...")
+
+
+def send_message_with_speech_to_text_ctg(code, timeout=20):
+
+    global finish_response
+    reset_global_flags()
+
+    # Message format stays the same as simple oral message
+    oral_message = {
+        "action": "SPEAK_CTG",
+        "exercise": "/",
+        "timestamp": datetime.now().isoformat(),
+        "code": code,
+        "message": "You have stopped too early, please try to continue the exercise. Yes or No?",
+        "language": "/"
+    }
+
+    while True:
+        # Send the message
+        client.publish(MSG_TOPIC, json.dumps(oral_message))
+        print(f"Published oral message: {oral_message}")
+        start_time = time.time()
+
+        # Wait for response
+        while time.time() - start_time < timeout:
+            if finish_response in ["yes", "no"]:
+                print(f"Received FINISH_RESPONSE: {finish_response}")
+                return finish_response  # Exit loop and return response
+            time.sleep(0.5)
+
+        # No response received, retrying
+        print("No response received. Retrying...")
+
+
+def send_message_with_speech_to_text_ctg_2(code, timeout=20):
+
+    global finish_response
+    reset_global_flags()
+
+    # Message format stays the same as simple oral message
+    oral_message = {
+        "action": "SPEAK_CTG",
         "exercise": "/",
         "timestamp": datetime.now().isoformat(),
         "code": code,
