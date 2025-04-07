@@ -274,8 +274,8 @@ def runScenario(queueData):
             # Fetch the daily schedule
             exercises = get_daily_schedule()
             print("Get list",exercises)
-            if not exercises:
-                logger.info("No exercises found. Exiting.")
+            if not isinstance(exercises, list) or not exercises:
+                send_exit()
                 break                    
 
             # Process each exercise in the schedule
@@ -418,7 +418,7 @@ def runScenario(queueData):
 
                     #Post the results
                     #metrics["polar_data"] = polar_data
-                    if (exercise["isFirstSession"])== False :
+                    if (exercise["isFirstSession"])== True :
                         try:
                 # Combine sending voice instruction and waiting for response
                             symptomps_response = send_message_with_speech_to_text("bph0101")
@@ -486,15 +486,15 @@ def runScenario(queueData):
                 # Fetch updated schedule after processing current exercises
                 exercises = get_daily_schedule()
                 ###If there are no exercises then end the 
-                if not exercises :
+                if not isinstance(exercises, list) or not exercises:
                      # Close all handlers and rename the log
+                    txt_file_path = convert_log_to_txt(log_filename)
+                    upload_file(txt_file_path, "Logs")
+
                     for handler in logger.handlers[:]:
                         handler.flush()
                         handler.close()
                         logger.removeHandler(handler)
-                    
-                    txt_file_path = convert_log_to_txt(log_filename)
-                    upload_file(txt_file_path, "Logs")
 
                     send_voice_instructions("bph0222")
                     send_voice_instructions("bph0108")
@@ -510,13 +510,14 @@ def runScenario(queueData):
 
                 if response == "no":
                     # Close all handlers and rename the log
+
+                    txt_file_path = convert_log_to_txt(log_filename)
+                    upload_file(txt_file_path, "Logs")
+
                     for handler in logger.handlers[:]:
                         handler.flush()
                         handler.close()
                         logger.removeHandler(handler)
-                    
-                    txt_file_path = convert_log_to_txt(log_filename)
-                    upload_file(txt_file_path, "Logs")
                     
                     print("User chose to stop. Exiting scenario.")
                     send_voice_instructions("bph0222")
