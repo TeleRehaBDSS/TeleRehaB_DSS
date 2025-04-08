@@ -33,6 +33,22 @@ CONFIG_PATH = BASE_DIR / 'config.ini'
 TOPIC_PING = "healthcheck/AREYOUALIVE"
 TOPIC_PONG = "healthcheck/IAMALIVE"
 
+def reorder_exercises(exercises):
+    priority_ids = list(range(1, 28))  # 1 to 27 inclusive
+    special_id = 43
+
+    # Split exercises
+    priority_exercises = [ex for ex in exercises if ex["exerciseId"] in priority_ids]
+    special_exercise = [ex for ex in exercises if ex["exerciseId"] == special_id]
+    other_exercises = [ex for ex in exercises if ex["exerciseId"] not in priority_ids + [special_id]]
+
+    # Sort each group
+    priority_exercises.sort(key=lambda x: x["exerciseId"])
+    other_exercises.sort(key=lambda x: x["exerciseId"])
+
+    # Concatenate
+    return priority_exercises + special_exercise + other_exercises
+
 def send_heartbeat():
     global received_response
     client = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION2)
@@ -273,6 +289,7 @@ def runScenario(queueData):
 
             # Fetch the daily schedule
             exercises = get_daily_schedule()
+            exercises = reorder_exercises(exercises)
             print("Get list",exercises)
             if not isinstance(exercises, list) or not exercises:
                 send_exit()
@@ -282,6 +299,7 @@ def runScenario(queueData):
             for exercise in exercises:
                 logger.info(f"Processing Exercise ID: {exercise['exerciseId']}")
                 
+
 
                 try:
                     start_exercise_demo(exercise)
