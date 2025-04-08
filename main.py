@@ -9,7 +9,7 @@ import time
 import requests
 import configparser
 from datetime import datetime
-from mqtt_messages import init_mqtt_client, set_language, start_exercise_demo, send_voice_instructions,send_message_with_speech_to_text,send_message_with_speech_to_text_2,send_exit
+from mqtt_messages import init_mqtt_client, set_language, start_exercise_demo, send_voice_instructions,send_message_with_speech_to_text,send_message_with_speech_to_text_2,send_exit,start_cognitive_games,start_exergames,send_message_with_speech_to_text_ctg,send_message_with_speech_to_text_ctg_2
 from data_management_v05 import scheduler, receive_imu_data
 from api_management import login, get_device_api_key
 from configure_file_management import read_configure_file
@@ -33,8 +33,8 @@ CONFIG_PATH = BASE_DIR / 'config.ini'
 TOPIC_PING = "healthcheck/AREYOUALIVE"
 TOPIC_PONG = "healthcheck/IAMALIVE"
 
-def reorder_exercises(exercises):
-    priority_ids = list(range(1, 28))  # 1 to 27 inclusive
+def reorder_exercises(exercises): #Function that add the exer and cognitive games at the end
+    priority_ids = list(range(1, 28))  
     special_id = 43
 
     # Split exercises
@@ -299,37 +299,48 @@ def runScenario(queueData):
             for exercise in exercises:
                 logger.info(f"Processing Exercise ID: {exercise['exerciseId']}")
                 
-
-
-                try:
-                    start_exercise_demo(exercise)
-                except Exception as e:
-                    logger.error(f"Demonstration failed for Exercise ID {exercise['exerciseId']}: {e}")
-                    continue
+                if exercise["exerciseId"] in [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,43]:
+                    try:
+                        start_exercise_demo(exercise)
+                    except Exception as e:
+                        logger.error(f"Demonstration failed for Exercise ID {exercise['exerciseId']}: {e}")
+                        continue
+                elif exercise["exerciseId"] in [28,29,30,31,32,33,34,35,36]:
+                    try:
+                        start_exergames(exercise)
+                    except Exception as e:
+                        logger.error(f"Demonstration failed for Exercise ID {exercise['exerciseId']}: {e}")
+                        continue
+                else:
+                    try:
+                        start_cognitive_games(exercise)
+                    except Exception as e:
+                        logger.error(f"Demonstration failed for Exercise ID {exercise['exerciseId']}: {e}")
+                        continue
                 
                 # Determine the config message based on exercise ID
-                if exercise['exerciseId'] == 1:
+                if exercise['exerciseId'] == 1 or exercise['exerciseId'] == 28:
                     config_message = f"HEAD={imu_head}-QUATERNIONS,PELVIS={imu_pelvis}-OFF,LEFTFOOT={imu_left}-OFF,RIGHTFOOT={imu_right}-OFF,exer_01"
-                elif exercise['exerciseId'] == 2:
+                elif exercise['exerciseId'] == 2 or exercise['exerciseId'] == 29:
                     config_message = f"HEAD={imu_head}-QUATERNIONS,PELVIS={imu_pelvis}-OFF,LEFTFOOT={imu_left}-OFF,RIGHTFOOT={imu_right}-OFF,exer_02"
                 elif exercise['exerciseId'] == 3 :
                     if exercise['progression'] == 0 or exercise['progression'] == 1:
                         config_message = f"HEAD={imu_head}-QUATERNIONS,PELVIS={imu_pelvis}-QUATERNIONS,LEFTFOOT={imu_left}-OFF,RIGHTFOOT={imu_right}-OFF,exer_03"
                     else:
                         config_message = f"HEAD={imu_head}-QUATERNIONS,PELVIS={imu_pelvis}-QUATERNIONS,LEFTFOOT={imu_left}-OFF,RIGHTFOOT={imu_right}-OFF,exer_25" #Side Bend Here
-                elif exercise['exerciseId'] == 4:
+                elif exercise['exerciseId'] == 4 or exercise['exerciseId'] == 30:
                     config_message = f"HEAD={imu_head}-OFF,PELVIS={imu_pelvis}-QUATERNIONS,LEFTFOOT={imu_left}-OFF,RIGHTFOOT={imu_right}-OFF,exer_09"
                 elif exercise['exerciseId'] == 5:
                     config_message = f"HEAD={imu_head}-OFF,PELVIS={imu_pelvis}-QUATERNIONS,LEFTFOOT={imu_left}-OFF,RIGHTFOOT={imu_right}-OFF,exer_10"
-                elif exercise['exerciseId'] == 6:
+                elif exercise['exerciseId'] == 6 or exercise['exerciseId'] == 31:
                     config_message = f"HEAD={imu_head}-QUATERNIONS,PELVIS={imu_pelvis}-QUATERNIONS,LEFTFOOT={imu_left}-OFF,RIGHTFOOT={imu_right}-OFF,exer_11"
                 elif exercise['exerciseId'] == 7:
                     config_message = f"HEAD={imu_head}-OFF,PELVIS={imu_pelvis}-QUATERNIONS,LEFTFOOT={imu_left}-QUATERNIONS,RIGHTFOOT={imu_right}-QUATERNIONS,exer_12"
-                elif exercise['exerciseId'] == 8:
+                elif exercise['exerciseId'] == 8 or exercise['exerciseId'] == 33:
                     config_message = f"HEAD={imu_head}-QUATERNIONS,PELVIS={imu_pelvis}-QUATERNIONS,LEFTFOOT={imu_left}-LINEARACCELERATION,RIGHTFOOT={imu_right}-LINEARACCELERATION,exer_16"
-                elif exercise['exerciseId'] == 9:
+                elif exercise['exerciseId'] == 9 or exercise['exerciseId'] == 34:
                     config_message = f"HEAD={imu_head}-QUATERNIONS,PELVIS={imu_pelvis}-QUATERNIONS,LEFTFOOT={imu_left}-LINEARACCELERATION,RIGHTFOOT={imu_right}-LINEARACCELERATION,exer_17"
-                elif exercise['exerciseId'] == 10:
+                elif exercise['exerciseId'] == 10 or exercise['exerciseId'] == 35 or exercise['exerciseId'] == 36:
                     config_message = f"HEAD={imu_head}-QUATERNIONS,PELVIS={imu_pelvis}-QUATERNIONS,LEFTFOOT={imu_left}-LINEARACCELERATION,RIGHTFOOT={imu_right}-LINEARACCELERATION,exer_18"
                 elif exercise['exerciseId'] == 11:
                     config_message = f"HEAD={imu_head}-OFF,PELVIS={imu_pelvis}-QUATERNIONS,LEFTFOOT={imu_left}-OFF,RIGHTFOOT={imu_right}-OFF,exer_21"
@@ -357,7 +368,7 @@ def runScenario(queueData):
                     config_message = f"HEAD={imu_head}-OFF,PELVIS={imu_pelvis}-OFF,LEFTFOOT={imu_left}-LINEARACCELERATION,RIGHTFOOT={imu_right}-LINEARACCELERATION,exer_19"
                 elif exercise['exerciseId'] == 23:
                     config_message = f"HEAD={imu_head}-QUATERNIONS,PELVIS={imu_pelvis}-QUATERNIONS,LEFTFOOT={imu_left}-LINEARACCELERATION,RIGHTFOOT={imu_right}-LINEARACCELERATION,exer_20"
-                elif exercise["exerciseId"] == 43:
+                elif exercise["exerciseId"] == 43 or exercise['exerciseId'] == 32:
                     config_message = f"HEAD={imu_head}-QUATERNIONS,PELVIS={imu_pelvis}-QUATERNIONS,LEFTFOOT={imu_left}-OFF,RIGHTFOOT={imu_right}-OFF,exer_24"
                 else:
                     logger.warning(f"No config message found for Exercise ID: {exercise['exerciseId']}")
@@ -368,62 +379,63 @@ def runScenario(queueData):
 
                 # Publish the configuration message to start the exercise
                 print('--- Starting the exercise ---')
-                client.publish("IMUsettings", config_message)
-                time.sleep(2)
-                client.publish('StartRecording', 'start')
-                # Start the scheduler process
-                scheduler_process = mp.Process(target=scheduler, args=(scheduleQueue,))
-                scheduler_process.start()
+                if exercise["exerciseId"] in [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36]:
+                    client.publish("IMUsettings", config_message)
+                    time.sleep(2)
+                    client.publish('StartRecording', 'start')
+                    # Start the scheduler process
+                    scheduler_process = mp.Process(target=scheduler, args=(scheduleQueue,))
+                    scheduler_process.start()
 
-                #Start the process to receive Polar data
-                # polar_proc = mp.Process(target=start_ble_process, args=(0, polar_queue))  # Adjust adapter index if needed
-                # polar_proc.start()
+                    #Start the process to receive Polar data
+                    # polar_proc = mp.Process(target=start_ble_process, args=(0, polar_queue))  # Adjust adapter index if needed
+                    # polar_proc.start()
 
-                # Wait for Polar connection or failure
-                time.sleep(5)  # Give some time to attempt connection
+                    # Wait for Polar connection or failure
+                    time.sleep(5)  # Give some time to attempt connection
 
-                # Start the process to receive IMU data
-                imu_process = mp.Process(
-                    target=receive_imu_data,
-                    args=(queueData, scheduleQueue, config_message, exercise,metrics_queue,)
-                )
+                    # Start the process to receive IMU data
+                    imu_process = mp.Process(
+                        target=receive_imu_data,
+                        args=(queueData, scheduleQueue, config_message, exercise,metrics_queue,)
+                    )
 
-                imu_process.start()
+                    imu_process.start()
 
-                # Wait for the IMU process to finish
-                imu_process.join()
+                    # Wait for the IMU process to finish
+                    imu_process.join()
 
-                data_zip_path = None
-                while not scheduleQueue.empty():
-                    msg = scheduleQueue.get()
-                    if isinstance(msg, tuple) and msg[0] == "data_zip":
-                        data_zip_path = msg[1]
-                        break
+                    data_zip_path = None
+                    while not scheduleQueue.empty():
+                        msg = scheduleQueue.get()
+                        if isinstance(msg, tuple) and msg[0] == "data_zip":
+                            data_zip_path = msg[1]
+                            break
 
-                if data_zip_path:
-                    upload_file(data_zip_path, "Data")
-                # Terminate the scheduler process
-                scheduler_process.terminate()
-                scheduler_process.join()
+                    if data_zip_path:
+                        upload_file(data_zip_path, "Data")
+                    # Terminate the scheduler process
+                    scheduler_process.terminate()
+                    scheduler_process.join()
 
-                # Stop recording after data collection is done
-                client.publish('StopRecording', 'StopRecording')
-                time.sleep(2)
+                    # Stop recording after data collection is done
+                    client.publish('StopRecording', 'StopRecording')
+                    time.sleep(2)
 
-                # Check if Polar connection failed early
-                # if not polar_proc.is_alive() or (not polar_queue.empty() and polar_queue.get() is None):
-                #     logging.warning("Polar H10 is not connected. Proceeding without heart rate data.")
-                #     polar_proc.terminate()
-                #     polar_proc.join()
-                
-                # polar_data = []
-                # while not polar_queue.empty():
-                #     polar_data.append(polar_queue.get())
-                
-                # Post metrics after the exercise ends
-
-                
+                    # Check if Polar connection failed early
+                    # if not polar_proc.is_alive() or (not polar_queue.empty() and polar_queue.get() is None):
+                    #     logging.warning("Polar H10 is not connected. Proceeding without heart rate data.")
+                    #     polar_proc.terminate()
+                    #     polar_proc.join()
                     
+                    # polar_data = []
+                    # while not polar_queue.empty():
+                    #     polar_data.append(polar_queue.get())
+                    
+                    # Post metrics after the exercise ends`
+
+                else:
+                    metrics = {}
                 if not metrics_queue.empty():
                     metrics = metrics_queue.get()
                     print(metrics)
@@ -513,15 +525,21 @@ def runScenario(queueData):
                         handler.flush()
                         handler.close()
                         logger.removeHandler(handler)
-
-                    send_voice_instructions("bph0222")
-                    send_voice_instructions("bph0108")
+                    if exercise["exerciseId"] in [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,43]:
+                        send_voice_instructions("bph0222")
+                        send_voice_instructions("bph0108")
+                    else :
+                        send_message_with_speech_to_text_ctg("bph0222")
+                        send_message_with_speech_to_text_ctg("bph0108")
                     client.publish('EXIT','EXIT')
                     send_exit()
                     break;
                 try:
                     time.sleep(2)
-                    response = send_message_with_speech_to_text("bph0088")
+                    if exercise["exerciseId"] in [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,43]:
+                        response = send_message_with_speech_to_text("bph0088")
+                    else :
+                        response = send_message_with_speech_to_text_ctg_2("bph0088")
                 except Exception as e:
                     logger.error(f"Failed to send voice instruction or get response for Exercise ID {exercise['exerciseId']}: {e}")
                     return
@@ -538,14 +556,21 @@ def runScenario(queueData):
                         logger.removeHandler(handler)
                     
                     print("User chose to stop. Exiting scenario.")
-                    send_voice_instructions("bph0222")
-                    send_voice_instructions("bph0108")
+                    if exercise["exerciseId"] in [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,43]:
+                        send_voice_instructions("bph0222")
+                        send_voice_instructions("bph0108")
+                    else:
+                        send_message_with_speech_to_text_ctg("bph0222")
+                        send_message_with_speech_to_text_ctg("bph0108")
                     client.publish('EXIT','EXIT')
                     send_exit()
                     return
                 elif response == "yes":
                     print("User chose to continue. Proceeding with next exercise.")
-                    send_voice_instructions("bph0045")
+                    if exercise["exerciseId"] in [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,43]:
+                        send_voice_instructions("bph0045")
+                    else:
+                        send_message_with_speech_to_text_ctg("bph0045")
                     continue
             
 
