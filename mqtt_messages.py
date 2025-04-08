@@ -23,16 +23,20 @@ demo_start_received = False
 demo_end_received = False
 finish_received = False
 finish_response=None
+ctg_results_received = False
+ctg_results_data = None
 iamalive_queue = mp.Queue()
 
 # Reset all global flags and responses
 def reset_global_flags():
-    global ack_received, demo_start_received, demo_end_received, finish_received, finish_response,ctg_received
+    global ack_received, demo_start_received, demo_end_received, finish_received, finish_response,ctg_received,ctg_results_received, ctg_results_data
     ack_received = False
     demo_start_received = False
     demo_end_received = False
     finish_received = False
+    ctg_results_received = False
     finish_response = None
+    ctg_results_data = None
     ctg_received = None
 
 # MQTT Callbacks
@@ -40,9 +44,18 @@ def on_connect(client, userdata, flags, rc):
     print(f"Connected with result code {rc}")
     client.subscribe([(DEMO_TOPIC, 0), (MSG_TOPIC, 0), (EXIT_TOPIC,0)])
 
+def wait_for_ctg_results(timeout=30):
+    global ctg_results_received, ctg_results_data
+    start_time = time.time()
+    while time.time() - start_time < timeout:
+        if ctg_results_received:
+            return ctg_results_data
+        time.sleep(0.5)
+    print("Timeout waiting for CTG_RESULTS.")
+    return None
 
 def on_message(client, userdata, msg):
-    global ack_received, demo_start_received, demo_end_received, finish_received,finish_response,ctg_received
+    global ack_received, demo_start_received, demo_end_received, finish_received,finish_response,ctg_received,ctg_results_received,ctg_results_data
     reset_global_flags()
 
     try:
@@ -79,6 +92,10 @@ def on_message(client, userdata, msg):
             finish_received = True
         elif payload.get("action") == "FINISH_RESPONSE":
             finish_response = payload.get("message", "").lower()
+        elif payload.get("action") == "CTG_RESULTS":
+            ctg_results_received = True
+            ctg_results_data = payload.get("message")
+            print(f"Received CTG_RESULTS: {ctg_results_data}")
     elif msg.topic == IAMALIVETOPIC:
         iamalive_queue.put('OK')
 
@@ -298,7 +315,17 @@ def start_cognitive_games(exercise):
 
     while not publish_and_wait(DEMO_TOPIC, cognitive_message, wait_for="CTG_END"):
         print("Waiting for CTG_END...")
+
     print(f"Exercise demonstration for {exercise_name} completed.")
+
+    # Wait for CTG_RESULTS only for cognitive games
+    results = wait_for_ctg_results(timeout=70)
+    if results:
+        print(f"Results received for cognitive game: {results}")
+        return results
+    else:
+        print("No results received for the cognitive game.")
+        return None
 
 # Function for Sending Oral Instructions
 def send_voice_instructions(code):

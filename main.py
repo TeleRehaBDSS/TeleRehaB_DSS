@@ -313,7 +313,7 @@ def runScenario(queueData):
                         continue
                 else:
                     try:
-                        start_cognitive_games(exercise)
+                        results = start_cognitive_games(exercise)
                     except Exception as e:
                         logger.error(f"Demonstration failed for Exercise ID {exercise['exerciseId']}: {e}")
                         continue
@@ -435,8 +435,8 @@ def runScenario(queueData):
                     # Post metrics after the exercise ends`
 
                 else:
-                    metrics = {}
-                if not metrics_queue.empty():
+                    metrics = results
+                if not metrics_queue.empty() or results != "":
                     metrics = metrics_queue.get()
                     print(metrics)
                     try:
