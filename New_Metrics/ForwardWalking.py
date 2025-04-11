@@ -352,14 +352,36 @@ def gaitanalysis(left_imu,right_imu,plotdiagrams):
     left_pre_swing_phase_times = []
     left_gait_cycle_times = []
 
+    if len(left_hs_indices) < 2 or len(right_hs_indices) < 2 or len(intersection_times) < 3:
+        print("Not enough gait events to compute metrics.")
+        return {
+        "total_metrics": {
+            "number_of_steps": 0,
+            "cadence": 0,
+            "stride_times": [],
+            "left_stance_times": [],
+            "right_stance_times": [],
+            "left_swing_times": [],
+            "right_swing_times": [],
+            "double_support_times": [],
+            "single_support_times": [],
+            "exercise_duration_seconds": (end_time - start_time).total_seconds()
+        }
+    }
+    
     for i in range(len(left_hs_indices) - 1):
-        t1 = common_time[right_hs_indices[i]]
-        t2 = common_time[left_to_indices[i]]
-        t4 = intersection_times[i * 2 + 1]
-        t5 = common_time[left_hs_indices[i + 1]]
-        t6 = common_time[right_to_indices[i]]
-        t7 = intersection_times[i * 2 + 2] if i * 2 + 2 < len(intersection_times) else intersection_times[-1]
-        t1_next = common_time[right_hs_indices[i + 1]] if i + 1 < len(right_hs_indices) else common_time[right_hs_indices[i]]
+        try:
+            t1 = common_time[right_hs_indices[i]]
+            t2 = common_time[left_to_indices[i]]
+            t4 = intersection_times[i * 2 + 1]
+            t5 = common_time[left_hs_indices[i + 1]]
+            t6 = common_time[right_to_indices[i]]
+            t7 = intersection_times[i * 2 + 2] if i * 2 + 2 < len(intersection_times) else intersection_times[-1]
+            t1_next = common_time[right_hs_indices[i + 1]] if i + 1 < len(right_hs_indices) else common_time[right_hs_indices[i]]
+        except IndexError as e:
+            print(f"Skipping index {i} due to insufficient data: {e}")
+            continue
+
 
         right_stance_phase_durations.append((t6 - t1).total_seconds())
         left_stance_phase_durations.append((t2 - t5).total_seconds() if i + 1 < len(left_hs_indices) else None)
@@ -371,20 +393,6 @@ def gaitanalysis(left_imu,right_imu,plotdiagrams):
         left_terminal_stance_times.append((t7 - t6).total_seconds() if i * 2 + 2 < len(intersection_times) else None)
         left_pre_swing_phase_times.append((t1_next - t7).total_seconds() if i * 2 + 2 < len(intersection_times) else None)
         left_gait_cycle_times.append((t2 - common_time[left_to_indices[i - 1]]).total_seconds() if i - 1 >= 0 else None)
-
-    # Print new gait metrics
-
-    # print(f"Right Stance Phase Durations: {right_stance_phase_durations}")
-    # print(f"Left Stance Phase Durations: {left_stance_phase_durations}")
-    # print(f"Right Load Response Times: {right_load_response_times}")
-    # print(f"Right Terminal Stance Times: {right_terminal_stance_times}")
-    # print(f"Right Pre-Swing Times: {right_pre_swing_times}")
-    # print(f"Right Gait Cycle Times: {right_gait_cycle_times}")
-    # print(f"Left Loading Response Times: {left_loading_response_times}")
-    # print(f"Left Terminal Stance Times: {left_terminal_stance_times}")
-    # print(f"Left Pre-Swing Phase Times: {left_pre_swing_phase_times}")
-    # print(f"Left Gait Cycle Times: {left_gait_cycle_times}")
-
 
     if(plotdiagrams):
 
