@@ -1022,7 +1022,7 @@ def get_metrics(imu1,imu2,imu3,imu4, counter):
         Limu4 = processed_dataframes[3]
 
     if(len(Limu1)>0 and len(Limu2) > 0):
-        returnedJson = getMetricsSittingNew01(Limu1, Limu2, True) 
+        returnedJson = getMetricsSittingNew01(Limu1, Limu2, False) 
         return returnedJson
 
 def getMetricsSittingNew01(Limu1, Limu2, plotdiagrams=False):
