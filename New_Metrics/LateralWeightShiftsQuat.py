@@ -317,7 +317,7 @@ def getMetricsStandingNew01(Limu2, Limu3, Limu4, plotdiagrams):
     num_left_movements = len(left_durations)
     num_right_movements = len(right_durations)
 
-    total_time = (end_time - start_time).total_seconds()
+    total_time = (df_Limu2.index[-1] - df_Limu2.index[0]).total_seconds()
     
     pace_left = num_left_movements / total_time if total_time > 0 else 0
     pace_right = num_right_movements / total_time if total_time > 0 else 0
