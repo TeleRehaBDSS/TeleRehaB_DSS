@@ -214,7 +214,7 @@ def start_exercise_demo(exercise):
     elif exercise['exerciseId'] == 22:
         exercise_name = f"VC holobalance_walking_4 P{exercise['progression']}"
     elif exercise['exerciseId'] == 43:
-        exercise_name = f"VC holobalance_standing_6 P{exercise['progression']}"
+        exercise_name = f"VC holobalance_standing_4 P{exercise['progression']}"
 
 
     demo_message = {
