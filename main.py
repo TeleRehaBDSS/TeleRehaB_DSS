@@ -436,6 +436,7 @@ def runScenario(queueData):
 
                 else:
                     metrics = results
+                    post_results(json.dumps(metrics), exercise['exerciseId'])
                 if not metrics_queue.empty():
                     metrics = metrics_queue.get()
                     print(metrics)
