@@ -14,6 +14,8 @@ import scipy
 from scipy.fft import fft, fftfreq
 from scipy.interpolate import UnivariateSpline
 
+total_duration_seconds = 0  # global variable
+
 def process_imu_data_acceleration(imu_data_lists, fs, plotdiagrams=False):
     # Ensure lists are not empty and convert to DataFrames
     dataframes = []
@@ -207,7 +209,8 @@ def get_metrics(imu1,imu2,imu3,imu4, counter):
     
 def getMetricsGaitNew01(Limu3, Limu4, plotdiagrams):
 
-    
+    global total_duration_seconds
+
     # #Limu1-LEFT
     columns = ['Timestamp', 'elapsed(time)', 'X(number)', 'Y (number)', 'Z (number)']
     df_Limu3 = pd.DataFrame(Limu3, columns=columns)
@@ -603,7 +606,14 @@ def getMetricsGaitNew01(Limu3, Limu4, plotdiagrams):
     # plt.legend()
     # plt.grid(True)
     # plt.show()
-    total_duration_seconds = (df_Limu3.index[-1] - df_Limu3.index[0]).total_seconds()
+    df_Limu3 = pd.DataFrame(Limu3, columns=columns)
+    df_Limu3['elapsed(time)'] = pd.to_datetime(df_Limu3['elapsed(time)'], unit='ms')
+    df_Limu3.sort_values(by='elapsed(time)', inplace=True)
+    df_Limu3.set_index('elapsed(time)', inplace=True)
+
+    interval_duration_seconds = (df_Limu3.index[-1] - df_Limu3.index[0]).total_seconds()
+    total_duration_seconds += interval_duration_seconds
+    
     metrics_data = {
             "total_metrics": {
                 "Gait Cycle":{
