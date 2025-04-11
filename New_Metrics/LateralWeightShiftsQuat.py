@@ -255,28 +255,23 @@ def getMetricsStandingNew01(Limu2, Limu3, Limu4, plotdiagrams):
     left_durations = []
     right_durations = []
     
-    columns = ['Timestamp', 'elapsed(time)', 'W(number)', 'X(number)', 'Y (number)', 'Z (number)']
+    columns = ['Timestamp', 'elapsed(time)',  'W(number)', 'X(number)', 'Y (number)', 'Z (number)']
+    df_Limu3 = pd.DataFrame(Limu3, columns=columns)
+    df_Limu3['elapsed(time)'] = pd.to_datetime(df_Limu3['elapsed(time)'], unit='ms')
+    df_Limu3 = df_Limu3.sort_values(by='elapsed(time)')
+    df_Limu3.set_index('elapsed(time)', inplace=True)
     
-    # Process data for each foot
-    def process_foot_data(df):
-        df['Timestamp'] = pd.to_datetime(df['Timestamp'], unit='ms')
-        df = df.sort_values(by='Timestamp').drop_duplicates(subset='Timestamp').reset_index(drop=True)
-        df = df[df['Timestamp'].diff().dt.total_seconds() > 0]
-        return df
+    columns = ['Timestamp', 'elapsed(time)',  'W(number)', 'X(number)', 'Y (number)', 'Z (number)']
+    df_Limu2 = pd.DataFrame(Limu2, columns=columns)
+    df_Limu2['elapsed(time)'] = pd.to_datetime(df_Limu2['elapsed(time)'], unit='ms')
+    df_Limu2 = df_Limu2.sort_values(by='elapsed(time)')
+    df_Limu2.set_index('elapsed(time)', inplace=True)
 
-    # Apply preprocessing to each dataset
-    df_Limu3 = process_foot_data(pd.DataFrame(Limu3, columns=columns))  # Left foot
-    df_Limu4 = process_foot_data(pd.DataFrame(Limu4, columns=columns))  # Right foot
-
-    # Find common time period
-    start_time = max(df_Limu3['Timestamp'].min(), df_Limu4['Timestamp'].min())
-    end_time = min(df_Limu3['Timestamp'].max(), df_Limu4['Timestamp'].max())
-    df_Limu3 = df_Limu3[(df_Limu3['Timestamp'] >= start_time) & (df_Limu3['Timestamp'] <= end_time)].reset_index(drop=True)
-    df_Limu4 = df_Limu4[(df_Limu4['Timestamp'] >= start_time) & (df_Limu4['Timestamp'] <= end_time)].reset_index(drop=True)
-
-    # Compute first differential (velocity) for movement detection
-    df_Limu3['w_diff'] = df_Limu3['W(number)'].diff().dropna()
-    df_Limu4['w_diff'] = df_Limu4['W(number)'].diff().dropna()
+    columns = ['Timestamp', 'elapsed(time)',  'W(number)', 'X(number)', 'Y (number)', 'Z (number)']
+    df_Limu4 = pd.DataFrame(Limu4, columns=columns)
+    df_Limu4['elapsed(time)'] = pd.to_datetime(df_Limu4['elapsed(time)'], unit='ms')
+    df_Limu4 = df_Limu4.sort_values(by='elapsed(time)')
+    df_Limu4.set_index('elapsed(time)', inplace=True)
 
     # Apply Gaussian smoothing for noise reduction
     sigma = 2  # Smoothing factor

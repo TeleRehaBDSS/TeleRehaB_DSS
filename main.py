@@ -436,8 +436,8 @@ def runScenario(queueData):
 
                 else:
                     metrics = results
-                if True:
-                    metrics = results if results else (metrics_queue.get() if not metrics_queue.empty() else "")
+                if not metrics_queue.empty():
+                    metrics = metrics_queue.get()
                     print(metrics)
                     try:
                         metrics = json.loads(metrics) if isinstance(metrics, str) else metrics

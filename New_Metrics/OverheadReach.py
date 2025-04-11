@@ -207,13 +207,15 @@ def getMetricsStandingOld03(Limu1, Limu2, plotdiagrams):
 
     columns = ['Timestamp', 'elapsed(time)',  'W(number)', 'X(number)', 'Y (number)', 'Z (number)']
     df_Limu1 = pd.DataFrame(Limu1, columns=columns)
-    df_Limu2 = pd.DataFrame(Limu2, columns=columns)
-
     df_Limu1['elapsed(time)'] = pd.to_datetime(df_Limu1['elapsed(time)'], unit='ms')
+    df_Limu1 = df_Limu1.sort_values(by='elapsed(time)')
+    df_Limu1.set_index('elapsed(time)', inplace=True)
+    
+    columns = ['Timestamp', 'elapsed(time)',  'W(number)', 'X(number)', 'Y (number)', 'Z (number)']
+    df_Limu2 = pd.DataFrame(Limu2, columns=columns)
     df_Limu2['elapsed(time)'] = pd.to_datetime(df_Limu2['elapsed(time)'], unit='ms')
-
-    df_Limu1 = df_Limu1.sort_values(by='elapsed(time)').set_index('elapsed(time)')
-    df_Limu2 = df_Limu2.sort_values(by='elapsed(time)').set_index('elapsed(time)')
+    df_Limu2 = df_Limu2.sort_values(by='elapsed(time)')
+    df_Limu2.set_index('elapsed(time)', inplace=True)
 
     # Convert to Euler angles
     quat1 = df_Limu1[['X(number)', 'Y (number)', 'Z (number)', 'W(number)']].to_numpy()

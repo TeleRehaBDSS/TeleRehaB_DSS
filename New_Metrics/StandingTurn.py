@@ -162,30 +162,24 @@ def get_metrics(imu1,imu2,imu3,imu4, counter):
 def getMetricsStandingOld04(Limu2, Limu3, Limu4, plotdiagrams):
     columns = ['Timestamp', 'elapsed(time)', 'W(number)', 'X(number)', 'Y (number)', 'Z (number)']
     
-    # Load the data
-    df_Limu2 = pd.DataFrame(Limu2, columns=columns)
+    columns = ['Timestamp', 'elapsed(time)',  'W(number)', 'X(number)', 'Y (number)', 'Z (number)']
     df_Limu3 = pd.DataFrame(Limu3, columns=columns)
-    df_Limu4 = pd.DataFrame(Limu4, columns=columns)
+    df_Limu3['elapsed(time)'] = pd.to_datetime(df_Limu3['elapsed(time)'], unit='ms')
+    df_Limu3 = df_Limu3.sort_values(by='elapsed(time)')
+    df_Limu3.set_index('elapsed(time)', inplace=True)
     
-    # Timestamp conversion and indexing
+    columns = ['Timestamp', 'elapsed(time)',  'W(number)', 'X(number)', 'Y (number)', 'Z (number)']
+    df_Limu2 = pd.DataFrame(Limu2, columns=columns)
     df_Limu2['elapsed(time)'] = pd.to_datetime(df_Limu2['elapsed(time)'], unit='ms')
-    df_Limu3['Timestamp'] = pd.to_datetime(df_Limu3['Timestamp'], unit='ms')
-    df_Limu4['Timestamp'] = pd.to_datetime(df_Limu4['Timestamp'], unit='ms')
-    
-    # Sort and synchronize
-    for df in [df_Limu3, df_Limu4]:
-        df.sort_values(by='Timestamp', inplace=True)
-        df.drop_duplicates(subset='Timestamp', inplace=True)
-        df.reset_index(drop=True, inplace=True)
+    df_Limu2 = df_Limu2.sort_values(by='elapsed(time)')
+    df_Limu2.set_index('elapsed(time)', inplace=True)
 
-    # Filter to common time window
-    start_time = max(df_Limu3['Timestamp'].min(), df_Limu4['Timestamp'].min())
-    end_time = min(df_Limu3['Timestamp'].max(), df_Limu4['Timestamp'].max())
-    df_Limu3 = df_Limu3[(df_Limu3['Timestamp'] >= start_time) & (df_Limu3['Timestamp'] <= end_time)].reset_index(drop=True)
-    df_Limu4 = df_Limu4[(df_Limu4['Timestamp'] >= start_time) & (df_Limu4['Timestamp'] <= end_time)].reset_index(drop=True)
+    columns = ['Timestamp', 'elapsed(time)',  'W(number)', 'X(number)', 'Y (number)', 'Z (number)']
+    df_Limu4 = pd.DataFrame(Limu4, columns=columns)
+    df_Limu4['elapsed(time)'] = pd.to_datetime(df_Limu4['elapsed(time)'], unit='ms')
+    df_Limu4 = df_Limu4.sort_values(by='elapsed(time)')
+    df_Limu4.set_index('elapsed(time)', inplace=True)
 
-    print("Start Time:", start_time)
-    print("End Time:", end_time)
 
     # Extract W components
     w_pelvis = df_Limu2['W(number)']
