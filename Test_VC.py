@@ -1,4 +1,5 @@
-import sys, json
+import sys 
+import json
 from datetime import datetime
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QPushButton, QLabel, QLineEdit,
