@@ -27,32 +27,52 @@ ctg_results_received = False
 ctg_results_data = None
 iamalive_queue = mp.Queue()
 
+def wait_for_ctg_results(timeout=70):
+    global ctg_results_received, ctg_results_data
+
+    print("[wait_for_ctg_results] entered")
+    start_time = time.time()
+
+    while time.time() - start_time < timeout:
+        if ctg_results_received and ctg_results_data:
+            try:
+                print("✅ CTG_RESULTS received, attempting to parse...")
+                cleaned_data = ctg_results_data.replace('\\n', '').replace('\\"', '"')
+                parsed_data = json.loads(cleaned_data)
+                if isinstance(parsed_data, str):
+                    parsed_data = json.loads(parsed_data)
+                print("✅ Parsing successful!")
+                return parsed_data
+            except Exception as e:
+                print(f"❌ Failed to parse CTG results: {e}")
+                return None
+        time.sleep(0.1)
+
+    print("❌ Timeout waiting for CTG_RESULTS.")
+    return None
+
+
 # Reset all global flags and responses
 def reset_global_flags():
-    global ack_received, demo_start_received, demo_end_received, finish_received, finish_response,ctg_received,ctg_results_received, ctg_results_data
+    global ack_received, demo_start_received, demo_end_received, finish_received, finish_response,ctg_received
     ack_received = False
     demo_start_received = False
     demo_end_received = False
-    finish_received = False
-    ctg_results_received = False
+    finish_received = False  
     finish_response = None
-    ctg_results_data = None
     ctg_received = None
+
+def reset_ctg():
+    global ctg_results_data, ctg_results_received
+    ctg_results_data = None
+    ctg_results_received = False
+    
 
 # MQTT Callbacks
 def on_connect(client, userdata, flags, rc):
     print(f"Connected with result code {rc}")
     client.subscribe([(DEMO_TOPIC, 0), (MSG_TOPIC, 0), (EXIT_TOPIC,0)])
 
-def wait_for_ctg_results(timeout=30):
-    global ctg_results_received, ctg_results_data
-    start_time = time.time()
-    while time.time() - start_time < timeout:
-        if ctg_results_received:
-            return ctg_results_data
-        time.sleep(0.5)
-    print("Timeout waiting for CTG_RESULTS.")
-    return None
 
 def on_message(client, userdata, msg):
     global ack_received, demo_start_received, demo_end_received, finish_received,finish_response,ctg_received,ctg_results_received,ctg_results_data
@@ -85,6 +105,9 @@ def on_message(client, userdata, msg):
             finish_received = True
         elif payload.get("action") == "CTG_END":
             ctg_received = True
+        elif payload.get("action") == "CTG_RESULTS":
+            ctg_results_received = True
+            ctg_results_data = payload.get("message")
     elif msg.topic == MSG_TOPIC:
         if payload.get("action") == "ACK":
             ack_received = True
@@ -92,17 +115,13 @@ def on_message(client, userdata, msg):
             finish_received = True
         elif payload.get("action") == "FINISH_RESPONSE":
             finish_response = payload.get("message", "").lower()
-        elif payload.get("action") == "CTG_RESULTS":
-            ctg_results_received = True
-            ctg_results_data = payload.get("message")
-            print(f"Received CTG_RESULTS: {ctg_results_data}")
     elif msg.topic == IAMALIVETOPIC:
         iamalive_queue.put('OK')
 
 
 # Publish and Wait
 def publish_and_wait(topic, message, timeout=1000, wait_for="ACK"):
-    global ack_received, demo_start_received, demo_end_received, finish_received, ctg_received
+    global ack_received, demo_start_received, demo_end_received, finish_received, ctg_received, ctg_results_received
     reset_global_flags()
 
     ack_received = demo_start_received = demo_end_received = finish_received = ctg_received =  False 
@@ -120,6 +139,8 @@ def publish_and_wait(topic, message, timeout=1000, wait_for="ACK"):
         if wait_for == "FINISH" and finish_received:
             return True
         if wait_for == "CTG_END" and ctg_received:
+            return True
+        if wait_for == "CTG_RESULTS" and ctg_results_received:
             return True
         time.sleep(0.5)
     print(f"Timeout waiting for {wait_for} on message: {message}")
@@ -281,8 +302,9 @@ def start_exergames(exercise):
 
 
 def start_cognitive_games(exercise):
+    global ctg_results_data,ctg_results_received
     reset_global_flags()
-
+    reset_ctg()
     if exercise['exerciseId'] == 37:
         exercise_name = "holobalance_cognitive_s3_memory"
         msg= f"{exercise['progression']}"
@@ -313,25 +335,48 @@ def start_cognitive_games(exercise):
     }
 
 
-    while not publish_and_wait(DEMO_TOPIC, cognitive_message, wait_for="CTG_END"):
-        print("Waiting for CTG_END...")
+    success = publish_and_wait(DEMO_TOPIC, cognitive_message, wait_for="CTG_RESULTS")
+    
+    if success and ctg_results_data:
+        print("✅ Results received for cognitive game.")
+        print("ctg_results_data =", ctg_results_data)
 
-    print(f"Exercise demonstration for {exercise_name} completed.")
-
-    # Wait for CTG_RESULTS only for cognitive games
-    results = wait_for_ctg_results(timeout=70)
-    if results:
-        print(f"Results received for cognitive game: {results}")
-        return results
+        try:
+            parsed_data = json.loads(ctg_results_data)
+            if isinstance(parsed_data, str):
+                parsed_data = json.loads(parsed_data)
+            return parsed_data
+        except json.JSONDecodeError as e:
+            print(f"❌ JSON decoding failed: {e}")
+            return None
     else:
-        print("No results received for the cognitive game.")
+        print("❌ No results returned from cognitive game.")
+        print("ctg_results_received =", ctg_results_received)
+        print("ctg_results_data =", ctg_results_data)
         return None
+
+
 
 # Function for Sending Oral Instructions
 def send_voice_instructions(code):
     reset_global_flags()
     oral_message = {
         "action": "SPEAK",
+        "exercise": "/",
+        "timestamp": datetime.now().isoformat(),
+        "code": code,
+        "message":"Thats it for today. Thank you very much for your cooperation, and have a nice day. I was glad to be of help.",
+        "language":"/"
+    }
+    # while not publish_and_wait(MSG_TOPIC, oral_message, wait_for="ACK"):
+    #     print("Retrying SPEAK message...")
+    while not publish_and_wait(MSG_TOPIC, oral_message, wait_for="FINISH"):
+        print("Retrying DEMO_START...")
+
+def send_voice_instructions_ctg(code):
+    reset_global_flags()
+    oral_message = {
+        "action": "SPEAK_CTG",
         "exercise": "/",
         "timestamp": datetime.now().isoformat(),
         "code": code,

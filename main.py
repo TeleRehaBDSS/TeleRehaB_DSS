@@ -9,7 +9,7 @@ import time
 import requests
 import configparser
 from datetime import datetime
-from mqtt_messages import init_mqtt_client, set_language, start_exercise_demo, send_voice_instructions,send_message_with_speech_to_text,send_message_with_speech_to_text_2,send_exit,start_cognitive_games,start_exergames,send_message_with_speech_to_text_ctg,send_message_with_speech_to_text_ctg_2
+from mqtt_messages import init_mqtt_client, set_language, start_exercise_demo, send_voice_instructions,send_message_with_speech_to_text,send_message_with_speech_to_text_2,send_exit,start_cognitive_games,start_exergames,send_message_with_speech_to_text_ctg,send_message_with_speech_to_text_ctg_2,send_voice_instructions_ctg
 from data_management_v05 import scheduler, receive_imu_data
 from api_management import login, get_device_api_key
 from configure_file_management import read_configure_file
@@ -317,6 +317,11 @@ def runScenario(queueData):
                     except Exception as e:
                         logger.error(f"Demonstration failed for Exercise ID {exercise['exerciseId']}: {e}")
                         continue
+                    if results:
+                        metrics = results
+                        post_results(json.dumps(metrics), exercise['exerciseId'])
+                    else:
+                        logger.warning("No results returned from cognitive game.")
                 
                 # Determine the config message based on exercise ID
                 if exercise['exerciseId'] == 1 or exercise['exerciseId'] == 28:
@@ -372,7 +377,7 @@ def runScenario(queueData):
                     config_message = f"HEAD={imu_head}-QUATERNIONS,PELVIS={imu_pelvis}-QUATERNIONS,LEFTFOOT={imu_left}-OFF,RIGHTFOOT={imu_right}-OFF,exer_24"
                 else:
                     logger.warning(f"No config message found for Exercise ID: {exercise['exerciseId']}")
-                    continue
+                    
                 
                 # Publish configuration and start the exercise
                 topic = "IMUsettings"
@@ -435,8 +440,8 @@ def runScenario(queueData):
                     # Post metrics after the exercise ends`
 
                 else:
-                    metrics = results
-                    post_results(json.dumps(metrics), exercise['exerciseId'])
+                    print("###cognitive###")
+                
                 if not metrics_queue.empty():
                     metrics = metrics_queue.get()
                     print(metrics)
@@ -451,7 +456,7 @@ def runScenario(queueData):
                     #metrics["polar_data"] = polar_data
                     if (exercise["isFirstSession"])== True :
                         try:
-                # Combine sending voice instruction and waiting for response
+                    # Combine sending voice instruction and waiting for response
                             symptomps_response = send_message_with_speech_to_text("bph0101")
                         except Exception as e:
                             logger.error(f"Failed to send voice instruction or get response for Exercise ID {exercise['exerciseId']}: {e}")
@@ -530,8 +535,8 @@ def runScenario(queueData):
                         send_voice_instructions("bph0222")
                         send_voice_instructions("bph0108")
                     else :
-                        send_message_with_speech_to_text_ctg("bph0222")
-                        send_message_with_speech_to_text_ctg("bph0108")
+                        send_voice_instructions_ctg("bph0222")
+                        send_voice_instructions_ctg("bph0108")
                     client.publish('EXIT','EXIT')
                     send_exit()
                     break;
@@ -540,7 +545,7 @@ def runScenario(queueData):
                     if exercise["exerciseId"] in [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,43]:
                         response = send_message_with_speech_to_text("bph0088")
                     else :
-                        response = send_message_with_speech_to_text_ctg_2("bph0088")
+                        response = send_message_with_speech_to_text_ctg("bph0088")
                 except Exception as e:
                     logger.error(f"Failed to send voice instruction or get response for Exercise ID {exercise['exerciseId']}: {e}")
                     return
@@ -561,8 +566,8 @@ def runScenario(queueData):
                         send_voice_instructions("bph0222")
                         send_voice_instructions("bph0108")
                     else:
-                        send_message_with_speech_to_text_ctg("bph0222")
-                        send_message_with_speech_to_text_ctg("bph0108")
+                        send_voice_instructions_ctg("bph0222")
+                        send_voice_instructions_ctg("bph0108")
                     client.publish('EXIT','EXIT')
                     send_exit()
                     return
@@ -571,7 +576,7 @@ def runScenario(queueData):
                     if exercise["exerciseId"] in [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,43]:
                         send_voice_instructions("bph0045")
                     else:
-                        send_message_with_speech_to_text_ctg("bph0045")
+                        send_voice_instructions_ctg("bph0045")
                     continue
             
 
