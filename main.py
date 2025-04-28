@@ -12,6 +12,7 @@ from datetime import datetime
 from mqtt_messages import init_mqtt_client, set_language, start_exercise_demo, send_voice_instructions,send_message_with_speech_to_text,send_message_with_speech_to_text_2,send_exit,start_cognitive_games,start_exergames,send_message_with_speech_to_text_ctg,send_message_with_speech_to_text_ctg_2,send_voice_instructions_ctg
 from data_management_v05 import scheduler, receive_imu_data
 from api_management import login, get_device_api_key
+from scoring import give_score
 from configure_file_management import read_configure_file
 from Polar_test import start_ble_process 
 from shared_variables import (
@@ -502,7 +503,9 @@ def runScenario(queueData):
                                 logger.error("Error getting blurry vision response: %s", e)
                                 send_voice_instructions("bph")
                                 break;
-
+                    
+                    score = give_score(metrics, exercise['exerciseId']) 
+                    metrics["score"] = score
                     post_results(json.dumps(metrics), exercise['exerciseId'])
                    
                 else:
