@@ -36,19 +36,19 @@ def wait_for_ctg_results(timeout=70):
     while time.time() - start_time < timeout:
         if ctg_results_received and ctg_results_data:
             try:
-                print("✅ CTG_RESULTS received, attempting to parse...")
+                print("CTG_RESULTS received, attempting to parse...")
                 cleaned_data = ctg_results_data.replace('\\n', '').replace('\\"', '"')
                 parsed_data = json.loads(cleaned_data)
                 if isinstance(parsed_data, str):
                     parsed_data = json.loads(parsed_data)
-                print("✅ Parsing successful!")
+                print("Parsing successful!")
                 return parsed_data
             except Exception as e:
-                print(f"❌ Failed to parse CTG results: {e}")
+                print(f"Failed to parse CTG results: {e}")
                 return None
         time.sleep(0.1)
 
-    print("❌ Timeout waiting for CTG_RESULTS.")
+    print("Timeout waiting for CTG_RESULTS.")
     return None
 
 
@@ -338,7 +338,7 @@ def start_cognitive_games(exercise):
     success = publish_and_wait(DEMO_TOPIC, cognitive_message, wait_for="CTG_RESULTS")
     
     if success and ctg_results_data:
-        print("✅ Results received for cognitive game.")
+        print("Results received for cognitive game.")
         print("ctg_results_data =", ctg_results_data)
 
         try:
@@ -347,10 +347,10 @@ def start_cognitive_games(exercise):
                 parsed_data = json.loads(parsed_data)
             return parsed_data
         except json.JSONDecodeError as e:
-            print(f"❌ JSON decoding failed: {e}")
+            print(f"JSON decoding failed: {e}")
             return None
     else:
-        print("❌ No results returned from cognitive game.")
+        print("No results returned from cognitive game.")
         print("ctg_results_received =", ctg_results_received)
         print("ctg_results_data =", ctg_results_data)
         return None

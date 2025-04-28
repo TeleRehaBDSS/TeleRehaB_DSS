@@ -26,7 +26,7 @@ def on_message(client, userdata, msg):
     print(f"Received MQTT message on topic [{msg.topic}]: {message_payload}")
 
     if msg.topic == MQTT_TOPIC and message_payload == MQTT_EXPECTED_MESSAGE:
-        print("✅ Received 'up' message, stopping IP broadcast.")
+        print("Received 'up' message, stopping IP broadcast.")
         broadcasting = False  # Stop broadcasting
 
 def start_mqtt_listener():
