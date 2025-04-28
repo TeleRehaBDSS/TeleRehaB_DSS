@@ -12,7 +12,7 @@ def give_score(metrics,id):
             else :
                 score = 3                                                                                                      
 
-    elif id == 3 or id == 6: # Sitting and Standing Bend Over
+    elif id == 3 or id == 6 or id ==43: # Sitting and Standing Bend Over
         if metrics["total_metrics"]["number_of_movements"] == 0:
             score = 0
         elif metrics["total_metrics"]["number_of_movements"] < 3:
@@ -45,7 +45,7 @@ def give_score(metrics,id):
         score = 3
     elif id == 10: #Forward Walking Tilt
         score = 3
-    elif id == 11: #Trunk Rotation
+    elif id == 14: #Trunk Rotation
         if metrics["total_metrics"]["number_of_movements"] == 0:
             score = 0
         elif metrics["total_metrics"]["number_of_movements"] <= 10:
@@ -54,7 +54,7 @@ def give_score(metrics,id):
             score = 2
         else :
             score =3
-    elif id == 12: #Toe Raises
+    elif id == 15: #Toe Raises
         if metrics["total_metrics"]["RIGHT LEG"]["number_of_movements"] == 0 or metrics["total_metrics"]["LEFT LEG"]["number_of_movements"] == 0 :
             score = 0
         elif metrics["total_metrics"]["RIGHT LEG"]["number_of_movements"] <= 7 or metrics["total_metrics"]["LEFT LEG"]["number_of_movements"] <= 7:
@@ -64,7 +64,7 @@ def give_score(metrics,id):
         else :
             score = 3
 
-    elif id == 13: #Heel Raises
+    elif id == 16: #Heel Raises
         if metrics["total_metrics"]["RIGHT LEG"]["number_of_movements"] == 0 or metrics["total_metrics"]["LEFT LEG"]["number_of_movements"] == 0 :
             score = 0
         elif metrics["total_metrics"]["RIGHT LEG"]["number_of_movements"] <= 7 or metrics["total_metrics"]["LEFT LEG"]["number_of_movements"] <= 7:
@@ -74,7 +74,7 @@ def give_score(metrics,id):
         else :
             score = 3
 
-    elif id == 14: #Seated Marching on the spot
+    elif id == 17: #Seated Marching on the spot
         if metrics["total_metrics"]["RIGHT LEG"]["number_of_movements"] == 0 or metrics["total_metrics"]["LEFT LEG"]["number_of_movements"] == 0:
             score = 0
         elif metrics["total_metrics"]["RIGHT LEG"]["number_of_movements"] <= 5 and metrics["total_metrics"]["LEFT LEG"]["number_of_movements"] <= 5:
@@ -83,7 +83,7 @@ def give_score(metrics,id):
             score = 2
         else :
             score = 3
-    elif id == 15: # Sit to Stand
+    elif id == 18: # Sit to Stand
         if metrics["total_metrics"]["number_of_movements"] == 0:
             score = 0
         elif metrics["total_metrics"]["number_of_movements"] <= 10:
@@ -93,7 +93,7 @@ def give_score(metrics,id):
         else :
             score =3
 
-    elif id == 16: #Lateral Weight Shifts
+    elif id == 19: #Lateral Weight Shifts
         if metrics["total_metrics"]["RIGHT LEG"]["number_of_movements"] == 0 or metrics["total_metrics"]["LEFT LEG"]["number_of_movements"] == 0:
             score = 0
         elif metrics["total_metrics"]["RIGHT LEG"]["number_of_movements"] <= 2 and metrics["total_metrics"]["LEFT LEG"]["number_of_movements"] <= 2:
@@ -103,7 +103,7 @@ def give_score(metrics,id):
         else :
             score = 3
 
-    elif id == 17: #Limits of Stability
+    elif id == 20: #Limits of Stability
         if metrics["total_metrics"]["number_of_movements"] == 0:
             score = 0
         elif metrics["total_metrics"]["number_of_movements"] <= 5:
@@ -113,7 +113,7 @@ def give_score(metrics,id):
         else :
             score =3
 
-    elif id == 18: #Forward Reach
+    elif id == 21: #Forward Reach
         if metrics["total_metrics"]["number_of_movements"] == 0:
             score = 0
         elif metrics["total_metrics"]["number_of_movements"] <= 10:
@@ -123,7 +123,7 @@ def give_score(metrics,id):
         else :
             score =3
 
-    elif id == 19: #Side Stepping
+    elif id == 22: #Side Stepping
         score = 3
     elif id == 20: #Walking Horizontal Head Turns
         score = 3
