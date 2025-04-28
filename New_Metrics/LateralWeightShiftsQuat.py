@@ -260,7 +260,8 @@ def getMetricsStandingNew01(Limu2, Limu3, Limu4, plotdiagrams):
     df_Limu3['elapsed(time)'] = pd.to_datetime(df_Limu3['elapsed(time)'], unit='ms')
     df_Limu3 = df_Limu3.sort_values(by='elapsed(time)')
     df_Limu3.set_index('elapsed(time)', inplace=True)
-    
+    df_Limu3['w_diff'] = df_Limu3['W(number)'].diff()
+
     columns = ['Timestamp', 'elapsed(time)',  'W(number)', 'X(number)', 'Y (number)', 'Z (number)']
     df_Limu2 = pd.DataFrame(Limu2, columns=columns)
     df_Limu2['elapsed(time)'] = pd.to_datetime(df_Limu2['elapsed(time)'], unit='ms')
@@ -272,7 +273,7 @@ def getMetricsStandingNew01(Limu2, Limu3, Limu4, plotdiagrams):
     df_Limu4['elapsed(time)'] = pd.to_datetime(df_Limu4['elapsed(time)'], unit='ms')
     df_Limu4 = df_Limu4.sort_values(by='elapsed(time)')
     df_Limu4.set_index('elapsed(time)', inplace=True)
-
+    df_Limu4['w_diff'] = df_Limu4['W(number)'].diff()
     # Apply Gaussian smoothing for noise reduction
     sigma = 2  # Smoothing factor
     df_Limu3['w_smooth'] = gaussian_filter1d(df_Limu3['w_diff'].fillna(0), sigma=sigma)
