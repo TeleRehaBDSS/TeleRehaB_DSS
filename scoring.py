@@ -127,5 +127,7 @@ def give_score(metrics,id):
         score = 3
     elif id == 20: #Walking Horizontal Head Turns
         score = 3
+    else :
+        score = 3
     return score
 
