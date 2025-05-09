@@ -12,7 +12,7 @@ def give_score(metrics,id):
             else :
                 score = 3                                                                                                      
 
-    elif id == 3 or id == 6 or id ==43: # Sitting and Standing Bend Over
+    elif id == 3 or id == 6 or id == 43: # Sitting and Standing Bend Over
         if metrics["total_metrics"]["number_of_movements"] == 0:
             score = 0
         elif metrics["total_metrics"]["number_of_movements"] < 3:
@@ -22,7 +22,7 @@ def give_score(metrics,id):
         else:
             score = 3
 
-    elif id == 4 or 5: #Standing Balances
+    elif id == 4 or id == 5: #Standing Balances
         if metrics["total_metrics"]["number_of_movements"] == 0:
             score = 3
         elif metrics["total_metrics"]["number_of_movements"] <= 2:
