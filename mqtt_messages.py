@@ -211,11 +211,11 @@ def start_exercise_demo(exercise):
     elif exercise['exerciseId'] == 10:
         exercise_name = f"VC holobalance_walking_3 P{exercise['progression']}"
     elif exercise['exerciseId'] == 11:
-        exercise_name = f"VC holobalance_stretching_1 P{exercise['progression']-1}"
+        exercise_name = f"VC holobalance_stretching_1 P{exercise['progression']}"
     elif exercise['exerciseId'] == 12:
-        exercise_name = f"VC holobalance_stretching_2 P{exercise['progression']-1}"
+        exercise_name = f"VC holobalance_stretching_2 P{exercise['progression']}"
     elif exercise['exerciseId'] == 13:
-        exercise_name = f"VC holobalance_stretching_3 P{exercise['progression']-1}"
+        exercise_name = f"VC holobalance_stretching_3 P{exercise['progression']}"
     elif exercise['exerciseId'] == 14:
         exercise_name = f"VC holobalance_sitting_4 P{exercise['progression']}"
     elif exercise['exerciseId'] == 15:
