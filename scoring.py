@@ -12,12 +12,22 @@ def give_score(metrics,id):
             else :
                 score = 3                                                                                                      
 
-    elif id == 3 or id == 6 or id == 43: # Sitting and Standing Bend Over
+    elif id == 3 or id == 6 : # Sitting and Standing Bend Over
         if metrics["total_metrics"]["number_of_movements"] == 0:
             score = 0
         elif metrics["total_metrics"]["number_of_movements"] < 3:
             score = 1
         elif metrics["total_metrics"]["number_of_movements"] >3 and metrics["total_metrics"]["movement_std_time"]<0.3:
+            score = 2
+        else:
+            score = 3
+    
+    elif id == 43:
+        if metrics["total_metrics"]["number_of_movements"] == 0:
+            score = 0
+        elif metrics["total_metrics"]["number_of_movements"] < 3:
+            score = 1
+        elif metrics["total_metrics"]["number_of_movements"] >3 and metrics["total_metrics"]["std_duration_seconds"]<0.3:
             score = 2
         else:
             score = 3
