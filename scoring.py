@@ -108,7 +108,7 @@ def give_score(metrics,id):
             score = 0
         elif metrics["total_metrics"]["RIGHT LEG"]["number_of_movements"] <= 2 and metrics["total_metrics"]["LEFT LEG"]["number_of_movements"] <= 2:
             score = 1
-        elif (metrics["total_metrics"]["RIGHT LEG"]["number_of_movements"] >= 5 and metrics["total_metrics"]["LEFT LEG"]["number_of_movements"] >= 5) and (metrics["total_metrics"]["RIGHT LEG"]["mean_range_degrees"] <= 0.5 or metrics["total_metrics"]["LEFT LEG"]["mean_range _degrees"] <= 0.5):
+        elif (metrics["total_metrics"]["RIGHT LEG"]["number_of_movements"] >= 5 and metrics["total_metrics"]["LEFT LEG"]["number_of_movements"] >= 5) and (metrics["total_metrics"]["RIGHT LEG"]["mean_range_degrees"] <= 0.5 or metrics["total_metrics"]["LEFT LEG"]["mean_range_degrees"] <= 0.5):
             score = 2
         else :
             score = 3
