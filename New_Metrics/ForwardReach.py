@@ -299,7 +299,7 @@ def getMetricsForwardReach(Limu1, Limu2, Limu3, plotdiagrams):
     filename = f"{datetime_string}_ForwardReach_metrics.txt"
 
     # Save the metrics to a file
-    save_metrics_to_txt(metrics_data, filename)
+    #save_metrics_to_txt(metrics_data, filename)
 
     return json.dumps(metrics_data, indent=4)
 
