@@ -43,11 +43,11 @@ def give_score(metrics,id):
             score = 0
 
     elif id == 7 : 
-        if metrics["total_metrics"]["number_of_movements"] == 0:
+        if metrics["total_metrics"]["Total Movements"] == 0:
             score = 0
-        elif metrics["total_metrics"]["number_of_movements"] <=18:
+        elif metrics["total_metrics"]["Total Movements"] <=18:
             score = 1
-        elif metrics["total_metrics"]["number_of_movements"] >=32:
+        elif metrics["total_metrics"]["Total Movements"] >=32:
             score = 2
     elif id == 8: #Forward Walking
         score = 3
@@ -89,7 +89,7 @@ def give_score(metrics,id):
             score = 0
         elif metrics["total_metrics"]["RIGHT LEG"]["number_of_movements"] <= 5 and metrics["total_metrics"]["LEFT LEG"]["number_of_movements"] <= 5:
             score = 1
-        elif (metrics["total_metrics"]["RIGHT LEG"]["number_of_movements"] >= 10 and metrics["total_metrics"]["LEFT LEG"]["number_of_movements"] >= 10) and (metrics["total_metrics"]["RIGHT LEG"]["mean_combined_range _degrees"] <= 0.5 or metrics["total_metrics"]["LEFT LEG"]["mean_combined_range_degrees"] <= 0.5):
+        elif (metrics["total_metrics"]["RIGHT LEG"]["number_of_movements"] >= 10 and metrics["total_metrics"]["LEFT LEG"]["number_of_movements"] >= 10) and (metrics["total_metrics"]["RIGHT LEG"]["mean_combined_range_degrees"] <= 0.5 or metrics["total_metrics"]["LEFT LEG"]["mean_combined_range_degrees"] <= 0.5):
             score = 2
         else :
             score = 3
