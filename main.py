@@ -636,7 +636,8 @@ listener_process.start()
 threadscenario = threading.Thread(target=runScenario, args=(queueData,))
 threadscenario.start()
 
-#send_heartbeat()
+client.loop_start()
+send_heartbeat()
 
-client.loop_forever()
+#client.loop_forever()
 threadscenario.join()

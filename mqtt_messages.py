@@ -23,6 +23,7 @@ demo_start_received = False
 demo_end_received = False
 finish_received = False
 finish_response=None
+ack_ctg = False
 ctg_results_received = False
 ctg_results_data = None
 iamalive_queue = mp.Queue()
@@ -54,8 +55,9 @@ def wait_for_ctg_results(timeout=70):
 
 # Reset all global flags and responses
 def reset_global_flags():
-    global ack_received, demo_start_received, demo_end_received, finish_received, finish_response,ctg_received
+    global ack_received, demo_start_received, demo_end_received, finish_received, finish_response,ctg_received,ack_ctg
     ack_received = False
+    ack_ctg = False
     demo_start_received = False
     demo_end_received = False
     finish_received = False  
@@ -75,7 +77,7 @@ def on_connect(client, userdata, flags, rc):
 
 
 def on_message(client, userdata, msg):
-    global ack_received, demo_start_received, demo_end_received, finish_received,finish_response,ctg_received,ctg_results_received,ctg_results_data
+    global ack_received, demo_start_received, demo_end_received, finish_received,finish_response,ctg_received,ctg_results_received,ctg_results_data,ack_ctg
     reset_global_flags()
 
     try:
@@ -97,6 +99,8 @@ def on_message(client, userdata, msg):
     elif msg.topic == DEMO_TOPIC:
         if payload.get("action") == "ACK":
             ack_received = True
+        if payload.get("action") == "ACK_CTG":
+            ack_ctg = True
         elif payload.get("action") == "DEMO_START":
             demo_start_received = True
         elif payload.get("action") == "DEMO_END":
@@ -121,7 +125,7 @@ def on_message(client, userdata, msg):
 
 # Publish and Wait
 def publish_and_wait(topic, message, timeout=1000, wait_for="ACK"):
-    global ack_received, demo_start_received, demo_end_received, finish_received, ctg_received, ctg_results_received
+    global ack_received, demo_start_received, demo_end_received, finish_received, ctg_received, ctg_results_received,ack_ctg
     reset_global_flags()
 
     ack_received = demo_start_received = demo_end_received = finish_received = ctg_received =  False 
@@ -141,6 +145,8 @@ def publish_and_wait(topic, message, timeout=1000, wait_for="ACK"):
         if wait_for == "CTG_END" and ctg_received:
             return True
         if wait_for == "CTG_RESULTS" and ctg_results_received:
+            return True
+        if wait_for == "ACK_CTG" and ack_ctg:
             return True
         time.sleep(0.5)
     print(f"Timeout waiting for {wait_for} on message: {message}")
@@ -293,8 +299,8 @@ def start_exergames(exercise):
     }
 
 
-    while not publish_and_wait(DEMO_TOPIC, exergame_message, wait_for="CTG_END"):
-        print("Waiting for CTG_END...")
+    while not publish_and_wait(DEMO_TOPIC, exergame_message, wait_for="ACK_CTG"):
+        print("Waiting for ACK_CTG...")
     print(f"Exercise demonstration for {exercise_name} completed.")
 
 
