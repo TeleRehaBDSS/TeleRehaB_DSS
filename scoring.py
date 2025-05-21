@@ -49,6 +49,8 @@ def give_score(metrics,id):
             score = 1
         elif metrics["total_metrics"]["Total Movements"] >=32:
             score = 2
+        else :
+            score = 3
     elif id == 8: #Forward Walking
         score = 3
     elif id == 9: #Forward Walking Yaw
