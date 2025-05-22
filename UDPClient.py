@@ -54,7 +54,7 @@ def SendMyIP():
     #Save local IP to ip.ini after broadcasting ends
     #try:
     #    with open("ip.ini", "w") as f:
-    #        f.write(f"LOCAL_IP={local_ip}\n")
+    #        f.write(f"[NETWORK]\nLOCAL_IP={local_ip}\n")
     #    print("Local IP saved to ip.ini.")
     #except Exception as e:
     #    print(f"Failed to save local IP: {e}")
