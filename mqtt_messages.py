@@ -4,6 +4,12 @@ import time
 from datetime import datetime
 import FindMyIP as ip
 import multiprocessing as mp
+import configparser
+
+#Load local IP from ip.ini
+#config = configparser.ConfigParser()
+#config.read("ip.ini")
+#local_ip = config.get("NETWORK", "LOCAL_IP")
 
 # MQTT Configuration
 local_ip = ip.internal()
@@ -72,6 +78,10 @@ def reset_ctg():
 
 # MQTT Callbacks
 def on_connect(client, userdata, flags, rc):
+    if rc == 0:
+        print(f"✅ Connected to MQTT broker at {MQTT_BROKER_HOST}:{MQTT_BROKER_PORT}")
+    else:
+        print(f"❌ Failed to connect, return code {rc}")
     print(f"Connected with result code {rc}")
     client.subscribe([(DEMO_TOPIC, 0), (MSG_TOPIC, 0), (EXIT_TOPIC,0)])
 

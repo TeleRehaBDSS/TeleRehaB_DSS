@@ -51,7 +51,14 @@ def SendMyIP():
         time.sleep(1)
 
     print("IP broadcasting stopped.")
-
+    #Save local IP to ip.ini after broadcasting ends
+    #try:
+    #    with open("ip.ini", "w") as f:
+    #        f.write(f"LOCAL_IP={local_ip}\n")
+    #    print("Local IP saved to ip.ini.")
+    #except Exception as e:
+    #    print(f"Failed to save local IP: {e}")
+        
 # Start MQTT listener in a separate thread
 mqtt_thread = threading.Thread(target=start_mqtt_listener, daemon=True)
 mqtt_thread.start()
