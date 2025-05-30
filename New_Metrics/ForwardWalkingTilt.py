@@ -351,7 +351,7 @@ def gaitanalysis(left_imu,right_imu,plotdiagrams):
     left_pre_swing_phase_times = []
     left_gait_cycle_times = []
 
-    if len(left_hs_indices) < 2 or len(right_hs_indices) < 2 or len(intersection_times) < 3:
+    if len(left_hs_indices) < 1 or len(right_hs_indices) < 1 or len(intersection_times) < 1:
         print("Not enough gait events to compute metrics.")
         return {
         "total_metrics": {
