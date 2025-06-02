@@ -591,6 +591,7 @@ def on_connect(client, userdata, flags, rc):
     logger.info("Connected to MQTT broker with result code " + str(rc))
     client.subscribe("IMUsettings")
     client.subscribe("DeviceStatus")
+    client.subscribe("StartRecording")
     client.subscribe("StopRecording")
     client.subscribe("TerminationTopic")
     client.subscribe("STARTVC")
