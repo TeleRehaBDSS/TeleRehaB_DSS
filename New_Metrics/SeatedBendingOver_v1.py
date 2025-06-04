@@ -285,56 +285,63 @@ def getMetricsSeatingOld03(Limu1, Limu2, plotdiagrams):
     pelvis_autocorr, pelvis_lags = calculate_autocorrelation(pelvis_filtered)
     degrees_autocorr , degrees_lags = calculate_autocorrelation(pelvis_normalized_pitch)
     # Find the lag of the first significant peak in autocorrelation
-    head_distance = head_lags[next(i for i in range(1, len(head_autocorr)) if head_autocorr[i] < head_autocorr[0] * 0.9)]
-    pelvis_distance = pelvis_lags[next(i for i in range(1, len(pelvis_autocorr)) if pelvis_autocorr[i] < pelvis_autocorr[0] * 0.9)]
-    degrees_distance = degrees_lags[next(i for i in range(1, len(degrees_autocorr)) if degrees_autocorr[i] < degrees_autocorr[0] * 0.9)]
+    if len(head_autocorr) >= 2 and  len(pelvis_autocorr)>=2 and len(degrees_autocorr) >=2 :
+        head_distance = head_lags[next(i for i in range(1, len(head_autocorr)) if head_autocorr[i] < head_autocorr[0] * 0.9)]
+        pelvis_distance = pelvis_lags[next(i for i in range(1, len(pelvis_autocorr)) if pelvis_autocorr[i] < pelvis_autocorr[0] * 0.9)]
+        degrees_distance = degrees_lags[next(i for i in range(1, len(degrees_autocorr)) if degrees_autocorr[i] < degrees_autocorr[0] * 0.9)]
 
-    # Detect maxima
-    head_maxima, _ = find_peaks(head_filtered, distance=head_distance)
-    pelvis_maxima, _ = find_peaks(pelvis_filtered,prominence=0.04, distance=degrees_distance)
-    degrees_maxima, _ = find_peaks(pelvis_normalized_pitch, distance=degrees_distance)
-    head_maxima_filtered = filter_maxima(head_filtered, head_maxima)
-    pelvis_maxima_filtered = pelvis_maxima
+        # Detect maxima
+        head_maxima, _ = find_peaks(head_filtered, distance=head_distance)
+        pelvis_maxima, _ = find_peaks(pelvis_filtered,prominence=0.04, distance=degrees_distance)
+        degrees_maxima, _ = find_peaks(pelvis_normalized_pitch, distance=degrees_distance)
+        head_maxima_filtered = filter_maxima(head_filtered, head_maxima)
+        pelvis_maxima_filtered = pelvis_maxima
 
-    # Detect minima by inverting the filtered signals
-    head_minima, _ = find_peaks(-head_filtered, distance=head_distance)
-    pelvis_minima, _ = find_peaks(-pelvis_filtered, distance=pelvis_distance)
-    degrees_minima, _ = find_peaks(-pelvis_normalized_pitch, distance=degrees_distance)
-
-
-    head_minima_filtered = filter_minima(head_filtered, head_maxima_filtered, head_minima)
-    pelvis_minima_filtered = pelvis_minima
-    # Define time interval (0.01 seconds between points)
-    time_interval = 0.01  # seconds
-    # Initialize a dictionary to store the metrics
-
-    # 2. Time between two pelvis maxima (time of movement)
-    time_between_pelvis_maxima = np.diff(pelvis_maxima_filtered) * time_interval
+        # Detect minima by inverting the filtered signals
+        head_minima, _ = find_peaks(-head_filtered, distance=head_distance)
+        pelvis_minima, _ = find_peaks(-pelvis_filtered, distance=pelvis_distance)
+        degrees_minima, _ = find_peaks(-pelvis_normalized_pitch, distance=degrees_distance)
 
 
-    # 3. From a pelvis maximum to a pelvis minimum (bend over time)
-    range_degrees = []  # Store range of each movement
+        head_minima_filtered = filter_minima(head_filtered, head_maxima_filtered, head_minima)
+        pelvis_minima_filtered = pelvis_minima
+        # Define time interval (0.01 seconds between points)
+        time_interval = 0.01  # seconds
+        # Initialize a dictionary to store the metrics
 
-    for i in range(len(pelvis_maxima) - 1):
-        # Calculate range of movement in degrees
-        max_angle = df_Limu2['Pitch (degrees)'][pelvis_minima[i]]
-        min_angle = df_Limu2['Pitch (degrees)'][pelvis_maxima[i]]
-        range_degrees.append(np.abs(max_angle - min_angle))
+        # 2. Time between two pelvis maxima (time of movement)
+        time_between_pelvis_maxima = np.diff(pelvis_maxima_filtered) * time_interval
 
 
-    # 5. Head movements: chin to chest (head max to head min) and chest to chin (head min to head max)
-    chin_to_chest_times = []
-    chest_to_chin_times = []
+        # 3. From a pelvis maximum to a pelvis minimum (bend over time)
+        range_degrees = []  # Store range of each movement
 
-    for i in range(len(head_minima_filtered)-1):
-        start_index = head_maxima_filtered[i]
-        end_index = head_minima_filtered[i]
-        chin_to_chest_times.append((end_index - start_index) * time_interval)
+        for i in range(len(pelvis_maxima) - 1):
+            # Calculate range of movement in degrees
+            max_angle = df_Limu2['Pitch (degrees)'][pelvis_minima[i]]
+            min_angle = df_Limu2['Pitch (degrees)'][pelvis_maxima[i]]
+            range_degrees.append(np.abs(max_angle - min_angle))
 
-    for i in range(len(head_minima_filtered)-1):
-        start_index = head_minima_filtered[i]
-        end_index = head_maxima_filtered[i + 1]
-        chest_to_chin_times.append((end_index - start_index) * time_interval)
+
+        # 5. Head movements: chin to chest (head max to head min) and chest to chin (head min to head max)
+        chin_to_chest_times = []
+        chest_to_chin_times = []
+
+        for i in range(len(head_minima_filtered)-1):
+            start_index = head_maxima_filtered[i]
+            end_index = head_minima_filtered[i]
+            chin_to_chest_times.append((end_index - start_index) * time_interval)
+
+        for i in range(len(head_minima_filtered)-1):
+            start_index = head_minima_filtered[i]
+            end_index = head_maxima_filtered[i + 1]
+            chest_to_chin_times.append((end_index - start_index) * time_interval)
+        else:
+            chest_to_chin_times=0
+            pelvis_maxima_filtered=[]
+            time_between_pelvis_maxima=0
+            range_degrees=0
+            chin_to_chest_times=0
     
     total_duration_seconds = (df_Limu1.index[-1] - df_Limu1.index[0]).total_seconds()
 
