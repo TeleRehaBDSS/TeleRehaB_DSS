@@ -62,6 +62,3 @@ def SendMyIP():
 # Start MQTT listener in a separate thread
 mqtt_thread = threading.Thread(target=start_mqtt_listener, daemon=True)
 mqtt_thread.start()
-
-# Start broadcasting IP
-SendMyIP()
